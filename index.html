@@ -40,6 +40,8 @@ body { background: #f4f4f4; min-height: 100vh; }
 .pts-badge.verde { background: #eafaf1; color: #27ae60; }
 .pts-badge.rojo { background: #fdf0f0; color: #e74c3c; }
 .fecha-info { font-size: 11px; color: #aaa; width: 100%; margin-top: 4px; }
+.penales-row { width: 100%; margin-top: 6px; font-size: 12px; color: #666; display: flex; align-items: center; gap: 6px; }
+.penales-sel { padding: 4px 8px; border-radius: 6px; border: 1px solid #ccc; font-size: 12px; background: #fff; }
 .tabla-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 10px; background: #fafafa; border: 1px solid #eee; margin-bottom: 8px; }
 .tabla-row.me { background: #eaf4ff; border: 2px solid #3498db; }
 .tabla-pos { font-size: 18px; min-width: 30px; text-align: center; }
@@ -60,6 +62,14 @@ body { background: #f4f4f4; min-height: 100vh; }
 .btn-aprobar { padding: 7px 14px; background: #27ae60; color: #fff; border: none; border-radius: 7px; cursor: pointer; font-weight: 600; font-size: 13px; margin-right: 6px; }
 .btn-rechazar { padding: 7px 14px; background: #e74c3c; color: #fff; border: none; border-radius: 7px; cursor: pointer; font-weight: 600; font-size: 13px; }
 .pw-badge { background: #f0f0f0; border-radius: 6px; padding: 3px 8px; font-size: 12px; font-family: monospace; margin-top: 4px; display: inline-block; }
+.grupos-tabla { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 12px; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 4px #0001; }
+.grupos-tabla th { background: #c0392b; color: #fff; padding: 8px 6px; text-align: center; }
+.grupos-tabla th:first-child { text-align: left; padding-left: 10px; }
+.grupos-tabla td { padding: 7px 6px; text-align: center; border-bottom: 1px solid #f0f0f0; }
+.grupos-tabla td:first-child { text-align: left; padding-left: 10px; font-weight: 500; }
+.grupos-tabla tr.clasificado { background: #eafaf1; }
+.grupos-tabla tr.clasificado td:first-child { font-weight: 700; }
+.pts-col { font-weight: 800; color: #c0392b; }
 </style>
 </head>
 <body>
@@ -70,19 +80,17 @@ var API_URL = "https://script.google.com/macros/s/AKfycbzOvBbw0swCb9oOaD7bbdrtNW
 var state = {
   view: "login", me: null, fixture: [], pronosticos: {}, tabla: [], solicitudes: [],
   tab: "grupos", loading: false, flash: null,
-  loginForm: { u: "", p: "" }, solForm: { u: "", nombre: "" },
-  loginErr: "", solMsg: "", drafts: {}
+  loginForm: { u: "", p: "" }, solForm: { nombre: "", password: "", password2: "" },
+  loginErr: "", solMsg: "", drafts: {}, penalesDraft: {}
 };
 
 function apiGet(params) {
   var qs = Object.keys(params).map(function(k) { return k + "=" + encodeURIComponent(params[k]); }).join("&");
   return fetch(API_URL + "?" + qs).then(function(r) { return r.json(); });
 }
-
 function apiPost(data) {
   return fetch(API_URL, { method: "POST", body: JSON.stringify(data) }).then(function(r) { return r.json(); });
 }
-
 function flash(msg, color) {
   state.flash = { msg: msg, color: color || "#27ae60" };
   render();
@@ -90,63 +98,44 @@ function flash(msg, color) {
 }
 
 function doLogin() {
-  state.loginErr = "";
-  render();
+  state.loginErr = ""; render();
   apiGet({ action: "login", usuario: state.loginForm.u, password: state.loginForm.p })
     .then(function(res) {
       if (res.ok) {
-        state.me = res;
-        state.me.username = state.loginForm.u;
+        state.me = res; state.me.username = state.loginForm.u;
         state.view = res.isAdmin ? "admin" : "usuario";
         state.tab = res.isAdmin ? "solicitudes" : "grupos";
         loadData();
-      } else {
-        state.loginErr = res.error || "Usuario o contrasena incorrectos";
-        render();
-      }
+      } else { state.loginErr = res.error || "Usuario o contrasena incorrectos"; render(); }
     }).catch(function() { state.loginErr = "Error de conexion. Intenta de nuevo."; render(); });
 }
 
 function doSolicitud() {
-  var nombre = document.getElementById("inp-sn").value.trim();
-  var pw = document.getElementById("inp-sp").value;
-  var pw2 = document.getElementById("inp-sp2").value;
+  var nombre = state.solForm.nombre.trim();
+  var pw = state.solForm.password, pw2 = state.solForm.password2;
   if (!nombre) { state.solMsg = "Ingresa tu nombre o apodo."; render(); return; }
   if (!pw || pw.length < 4) { state.solMsg = "La contrasena debe tener al menos 4 caracteres."; render(); return; }
   if (pw !== pw2) { state.solMsg = "Las contrasenas no coinciden."; render(); return; }
-  state.solForm.nombre = nombre;
-  state.solForm.password = pw;
-  // Generar usuario a partir del nombre
   var usuario = nombre.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/\s+/g,"").replace(/[^a-z0-9]/g,"");
   apiPost({ action: "solicitarAcceso", usuario: usuario, nombre: nombre, password: pw })
     .then(function(res) {
-      state.solMsg = res.ok
-        ? "Solicitud enviada! El admin te aprueba pronto. Tu usuario de acceso sera: " + usuario
-        : (res.error || "Error al enviar");
+      state.solMsg = res.ok ? "Solicitud enviada! El admin te aprueba pronto. Tu usuario sera: " + usuario : (res.error || "Error");
       render();
     }).catch(function() { state.solMsg = "Error de conexion."; render(); });
 }
 
 function loadData() {
   state.loading = true;
-
-  // Usar fixture cacheado si existe (evita llamada al servidor)
   var cachedFixture = sessionStorage.getItem("prode_fixture");
   if (cachedFixture) {
     state.fixture = JSON.parse(cachedFixture);
-    state.loading = false;
-    render();
-    // Cargar el resto en paralelo sin bloquear
+    state.loading = false; render();
     cargarResto();
   } else {
     render();
     apiGet({ action: "getFixture" }).then(function(res) {
-      if (res.ok) {
-        state.fixture = res.partidos;
-        sessionStorage.setItem("prode_fixture", JSON.stringify(res.partidos));
-      }
-      state.loading = false;
-      render();
+      if (res.ok) { state.fixture = res.partidos; sessionStorage.setItem("prode_fixture", JSON.stringify(res.partidos)); }
+      state.loading = false; render();
       cargarResto();
     }).catch(function() { state.loading = false; render(); });
   }
@@ -166,55 +155,42 @@ function cargarResto() {
   }).catch(function() {});
 }
 
-function guardarProno(partido) {
-  var d = state.drafts[partido.id] || {};
-  var saved = state.pronosticos[partido.id] || {};
-  var g1 = d.g1 !== undefined ? d.g1 : saved.g1;
-  var g2 = d.g2 !== undefined ? d.g2 : saved.g2;
-  if (g1 === "" || g1 === undefined || g2 === "" || g2 === undefined) { flash("Completa ambos goles", "#e74c3c"); return; }
-  // Actualización optimista — mostrar guardado inmediatamente
-  state.pronosticos[partido.id] = { g1: Number(g1), g2: Number(g2) };
-  delete state.drafts[partido.id];
-  flash("Guardado"); render();
-  // Enviar al servidor en segundo plano
-  apiPost({ action: "guardarPronostico", usuario: state.me.username, partidoId: partido.id, g1: Number(g1), g2: Number(g2) })
-    .catch(function() { flash("Error al guardar, intenta de nuevo", "#e74c3c"); });
-}
-
-function aprobarUsuario(usuario, nombre) {
-  apiPost({ action: "aprobarUsuario", usuario: usuario })
-    .then(function(res) {
-      if (res.ok) {
-        flash(nombre + " aprobado. Contrasena: " + res.password);
-        state.solicitudes = state.solicitudes.filter(function(s) { return s.usuario !== usuario; });
-        render();
-      } else {
-        flash("Error: " + (res.error || ""), "#e74c3c");
-      }
-    });
-}
-
-function rechazarUsuario(usuario) {
-  apiPost({ action: "rechazarUsuario", usuario: usuario })
-    .then(function(res) {
-      if (res.ok) {
-        state.solicitudes = state.solicitudes.filter(function(s) { return s.usuario !== usuario; });
-        flash("Solicitud rechazada");
-        render();
-      }
-    });
+// ── HELPERS ────────────────────────────────────────────────────
+function getGanador(g1, g2, penales) {
+  if (g1 > g2) return "local";
+  if (g1 < g2) return "visitante";
+  return penales || null;
 }
 
 var PUNTOS = { Grupos:{exacto:3,resultado:1},"16avos":{exacto:4,resultado:2},Octavos:{exacto:5,resultado:2},Cuartos:{exacto:7,resultado:3},Semis:{exacto:9,resultado:4},Tercero:{exacto:9,resultado:4},Final:{exacto:15,resultado:6} };
 
+function calcPts(prono, partido) {
+  if (!prono || partido.golesLocal === "" || partido.golesVisit === "") return null;
+  var p = PUNTOS[partido.fase] || PUNTOS.Grupos;
+  var g1r = Number(partido.golesLocal), g2r = Number(partido.golesVisit);
+  var g1p = Number(prono.g1), g2p = Number(prono.g2);
+
+  if (partido.fase === "Grupos") {
+    if (g1p === g1r && g2p === g2r) return p.exacto;
+    return Math.sign(g1p-g2p) === Math.sign(g1r-g2r) ? p.resultado : 0;
+  }
+
+  // Eliminatorias
+  var realGana = getGanador(g1r, g2r, partido.penales);
+  var pronoGana = getGanador(g1p, g2p, prono.penales);
+  if (!realGana || !pronoGana) return null;
+
+  var exactScore = g1p === g1r && g2p === g2r;
+  var exactPenales = (g1r !== g2r) || (prono.penales === partido.penales);
+  if (exactScore && exactPenales) return p.exacto;
+  if (pronoGana === realGana) return p.resultado;
+  return 0;
+}
+
 function partidoEmpezado(p) {
   try {
     var parts = p.fecha.split("/");
-    var day = parseInt(parts[0]), month = parseInt(parts[1]);
-    var hparts = p.hora.split(":");
-    var hour = parseInt(hparts[0]), min = parseInt(hparts[1]);
-    // Horario EST = UTC-5
-    var matchUTC = new Date(Date.UTC(2026, month-1, day, hour+5, min));
+    var matchUTC = new Date(Date.UTC(2026, parseInt(parts[1])-1, parseInt(parts[0]), parseInt(p.hora.split(":")[0])+5, parseInt(p.hora.split(":")[1])));
     return new Date() > matchUTC;
   } catch(e) { return false; }
 }
@@ -222,18 +198,8 @@ function partidoEmpezado(p) {
 function sortKey(p) {
   try {
     var parts = p.fecha.split("/");
-    var month = parts[1].padStart(2,"0");
-    var day = parts[0].padStart(2,"0");
-    var hora = p.hora.replace(":","").padStart(4,"0");
-    return "2026" + month + day + hora;
+    return "2026" + parts[1].padStart(2,"0") + parts[0].padStart(2,"0") + p.hora.replace(":","").padStart(4,"0");
   } catch(e) { return ""; }
-}
-
-function calcPts(prono, partido) {
-  if (!prono || partido.golesLocal === "" || partido.golesVisit === "") return null;
-  var p = PUNTOS[partido.fase] || PUNTOS.Grupos;
-  if (Number(prono.g1) === Number(partido.golesLocal) && Number(prono.g2) === Number(partido.golesVisit)) return p.exacto;
-  return Math.sign(prono.g1-prono.g2) === Math.sign(partido.golesLocal-partido.golesVisit) ? p.resultado : 0;
 }
 
 function getGrupos() {
@@ -241,18 +207,93 @@ function getGrupos() {
   state.fixture.forEach(function(p) { if (p.fase === "Grupos" && g.indexOf(p.grupo) < 0) g.push(p.grupo); });
   return g.sort();
 }
-
 function getFases() {
   var orden = ["16avos","Octavos","Cuartos","Semis","Tercero","Final"], fases = [];
   orden.forEach(function(f) { if (state.fixture.some(function(p) { return p.fase === f; })) fases.push(f); });
   return fases;
 }
-
 function avatarColor(n) {
   var c = ["#e74c3c","#3498db","#2ecc71","#f39c12","#9b59b6","#1abc9c","#e67e22","#16a085"];
   return c[(n||"A").charCodeAt(0) % c.length];
 }
 
+// ── GUARDAR PRONO ──────────────────────────────────────────────
+function guardarProno(partido) {
+  var d = state.drafts[partido.id] || {};
+  var saved = state.pronosticos[partido.id] || {};
+  var g1 = d.g1 !== undefined ? d.g1 : saved.g1;
+  var g2 = d.g2 !== undefined ? d.g2 : saved.g2;
+  var penales = state.penalesDraft[partido.id] !== undefined ? state.penalesDraft[partido.id] : (saved.penales || "");
+  if (g1 === "" || g1 === undefined || g2 === "" || g2 === undefined) { flash("Completa ambos goles", "#e74c3c"); return; }
+  if (partido.fase !== "Grupos" && Number(g1) === Number(g2) && !penales) { flash("Predijiste empate — elegi quien gana en penales", "#e74c3c"); return; }
+  state.pronosticos[partido.id] = { g1: Number(g1), g2: Number(g2), penales: penales };
+  delete state.drafts[partido.id]; delete state.penalesDraft[partido.id];
+  flash("Guardado"); render();
+  apiPost({ action: "guardarPronostico", usuario: state.me.username, partidoId: partido.id, g1: Number(g1), g2: Number(g2), penales: penales })
+    .catch(function() { flash("Error al guardar, intenta de nuevo", "#e74c3c"); });
+}
+
+function aprobarUsuario(usuario, nombre) {
+  apiPost({ action: "aprobarUsuario", usuario: usuario }).then(function(res) {
+    if (res.ok) { flash(nombre + " aprobado"); state.solicitudes = state.solicitudes.filter(function(s) { return s.usuario !== usuario; }); render(); }
+    else flash("Error: " + (res.error||""), "#e74c3c");
+  });
+}
+function rechazarUsuario(usuario) {
+  apiPost({ action: "rechazarUsuario", usuario: usuario }).then(function(res) {
+    if (res.ok) { state.solicitudes = state.solicitudes.filter(function(s) { return s.usuario !== usuario; }); flash("Rechazado"); render(); }
+  });
+}
+
+// ── POSICIONES DE GRUPOS ───────────────────────────────────────
+function calcPosicionesGrupos() {
+  var grupos = {};
+  state.fixture.filter(function(p) { return p.fase === "Grupos"; }).forEach(function(p) {
+    if (!grupos[p.grupo]) grupos[p.grupo] = {};
+    if (!grupos[p.grupo][p.local]) grupos[p.grupo][p.local] = {pj:0,pg:0,pe:0,pp:0,gf:0,gc:0,pts:0};
+    if (!grupos[p.grupo][p.visitante]) grupos[p.grupo][p.visitante] = {pj:0,pg:0,pe:0,pp:0,gf:0,gc:0,pts:0};
+    if (p.golesLocal === "" || p.golesVisit === "") return;
+    var g1 = Number(p.golesLocal), g2 = Number(p.golesVisit);
+    var tL = grupos[p.grupo][p.local], tV = grupos[p.grupo][p.visitante];
+    tL.pj++; tV.pj++; tL.gf += g1; tL.gc += g2; tV.gf += g2; tV.gc += g1;
+    if (g1 > g2) { tL.pg++; tL.pts += 3; tV.pp++; }
+    else if (g1 < g2) { tV.pg++; tV.pts += 3; tL.pp++; }
+    else { tL.pe++; tV.pe++; tL.pts++; tV.pts++; }
+  });
+  return grupos;
+}
+
+function renderPosicionesGrupos() {
+  var grupos = calcPosicionesGrupos();
+  var grpKeys = Object.keys(grupos).sort();
+  if (!grpKeys.length) return '<p style="color:#aaa;padding:20px">Aun no hay resultados cargados.</p>';
+  var html = "";
+  grpKeys.forEach(function(grp) {
+    var eqKeys = Object.keys(grupos[grp]);
+    var arr = [];
+    eqKeys.forEach(function(eq) { arr.push({ nombre: eq, t: grupos[grp][eq] }); });
+    arr.sort(function(a,b) {
+      if (b.t.pts !== a.t.pts) return b.t.pts - a.t.pts;
+      var gdA = a.t.gf-a.t.gc, gdB = b.t.gf-b.t.gc;
+      if (gdB !== gdA) return gdB - gdA;
+      return b.t.gf - a.t.gf;
+    });
+    html += '<div class="grupo-title">Grupo ' + grp + '</div>';
+    html += '<table class="grupos-tabla"><tr><th>Equipo</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>DG</th><th>Pts</th></tr>';
+    arr.forEach(function(e, i) {
+      var t = e.t;
+      html += '<tr class="' + (i<2?"clasificado":"") + '">' +
+        '<td>' + (i<2?'<span style="color:#27ae60">&#10003;</span> ':"") + e.nombre + '</td>' +
+        '<td>' + t.pj + '</td><td>' + t.pg + '</td><td>' + t.pe + '</td><td>' + t.pp + '</td>' +
+        '<td>' + t.gf + '</td><td>' + t.gc + '</td><td>' + (t.gf-t.gc) + '</td>' +
+        '<td class="pts-col">' + t.pts + '</td></tr>';
+    });
+    html += '</table>';
+  });
+  return html;
+}
+
+// ── RENDER ─────────────────────────────────────────────────────
 function render() {
   var html = "";
   if (state.flash) html += '<div class="flash" style="background:' + state.flash.color + '">' + state.flash.msg + '</div>';
@@ -273,8 +314,8 @@ function renderLogin() {
     '<button class="btn-primary" id="btn-login">Entrar</button>' +
     '<div class="divider"></div><p class="divider-label">No tenes acceso? Pedile al admin</p>' +
     '<input class="inp" id="inp-sn" type="text" placeholder="Tu nombre o apodo (ej: Juan Pablo)" value="' + state.solForm.nombre + '">' +
-    '<input class="inp" id="inp-sp" type="password" placeholder="Elegí una contraseña" value="' + (state.solForm.password||"") + '">' +
-    '<input class="inp" id="inp-sp2" type="password" placeholder="Repetí la contraseña" value="' + (state.solForm.password2||"") + '">' +
+    '<input class="inp" id="inp-sp" type="password" placeholder="Elegi una contrasena" value="' + (state.solForm.password||"") + '">' +
+    '<input class="inp" id="inp-sp2" type="password" placeholder="Repeti la contrasena" value="' + (state.solForm.password2||"") + '">' +
     '<button class="btn-secondary" id="btn-solicitar">Solicitar acceso</button>' +
     (state.solMsg ? '<p class="' + (state.solMsg.includes("enviada") ? "success" : "error") + '">' + state.solMsg + '</p>' : '') +
     '</div></div>';
@@ -286,41 +327,35 @@ function renderHeader() {
   var pos = (!state.me.isAdmin && entry) ? " #" + (state.tabla.indexOf(entry)+1) + " " + entry.pts + "pts" : "";
   return '<div class="header"><div class="header-left">' +
     '<div style="width:34px;height:34px;border-radius:50%;background:' + avatarColor(nombre) + ';display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px">' + (nombre[0]||"?").toUpperCase() + '</div>' +
-    '<div><div style="font-weight:700;font-size:15px">' + nombre + '</div>' +
-    '<div style="font-size:11px;opacity:0.8">' + (state.me.isAdmin ? "Admin" : "Jugador" + pos) + '</div></div>' +
+    '<div><div style="font-weight:700;font-size:15px">' + nombre + '</div><div style="font-size:11px;opacity:0.8">' + (state.me.isAdmin ? "Admin" : "Jugador" + pos) + '</div></div>' +
     '</div><button class="btn-logout" id="btn-logout">Salir</button></div>';
 }
 
 function renderUsuario() {
-  var grupos = getGrupos(), fases = getFases();
-  var tabs = ["grupos"].concat(fases).concat(["tabla"]);
+  var fases = getFases();
+  var tabs = ["grupos"].concat(fases).concat(["posiciones","tabla"]);
   var html = '<div class="container"><div class="tabs">';
   tabs.forEach(function(t) {
-    html += '<button class="tab ' + (state.tab===t?"active":"") + '" data-tab="' + t + '">' + (t==="tabla"?"Tabla":t) + '</button>';
+    var label = t === "tabla" ? "Tabla" : t === "posiciones" ? "Posiciones" : t;
+    html += '<button class="tab ' + (state.tab===t?"active":"") + '" data-tab="' + t + '">' + label + '</button>';
   });
   html += '</div>';
-  if (state.loading) {
-    html += '<div class="loading"><div class="spinner">&#9917;</div><p>Cargando...</p></div>';
-  } else if (state.tab === "tabla") {
-    html += renderTabla();
-  } else if (state.tab === "grupos") {
+
+  if (state.loading) { html += '<div class="loading"><div class="spinner">&#9917;</div><p>Cargando...</p></div>'; }
+  else if (state.tab === "tabla") { html += renderTabla(); }
+  else if (state.tab === "posiciones") { html += renderPosicionesGrupos(); }
+  else if (state.tab === "grupos") {
     html += '<div class="info-box">Verde = guardado. Exacto: 3pts. Solo resultado: 1pt</div>';
-    var partidosGrupos = state.fixture.filter(function(p) { return p.fase === "Grupos"; });
-    partidosGrupos.sort(function(a,b) {
-      var ka = sortKey(a), kb = sortKey(b);
-      return ka < kb ? -1 : ka > kb ? 1 : 0;
-    });
+    var pg = state.fixture.filter(function(p) { return p.fase === "Grupos"; });
+    pg.sort(function(a,b) { var ka=sortKey(a),kb=sortKey(b); return ka<kb?-1:ka>kb?1:0; });
     var fechaActual = "";
-    partidosGrupos.forEach(function(p) {
-      if (p.fecha !== fechaActual) {
-        fechaActual = p.fecha;
-        html += '<div class="grupo-title">&#128197; ' + p.fecha + '</div>';
-      }
+    pg.forEach(function(p) {
+      if (p.fecha !== fechaActual) { fechaActual = p.fecha; html += '<div class="grupo-title">&#128197; ' + p.fecha + '</div>'; }
       html += renderPartido(p);
     });
   } else {
     var ptsInfo = PUNTOS[state.tab] || {};
-    html += '<div class="info-box">Exacto: ' + ptsInfo.exacto + 'pts. Solo resultado: ' + ptsInfo.resultado + 'pts</div>';
+    html += '<div class="info-box">Exacto: ' + ptsInfo.exacto + 'pts. Solo resultado: ' + ptsInfo.resultado + 'pts. En eliminatorias, si hay empate se juegan penales.</div>';
     state.fixture.filter(function(p) { return p.fase === state.tab; }).forEach(function(p) { html += renderPartido(p); });
   }
   html += '<div class="puntos-ref">Grupos: 3/1 - 16avos: 4/2 - Octavos: 5/2 - Cuartos: 7/3 - Semis: 9/4 - Final: 15/6</div></div>';
@@ -338,10 +373,27 @@ function renderPartido(p) {
   var bgColor = saved ? "#eafaf1" : empezado ? "#f5f5f5" : "#fff";
   var estadoBadge = saved
     ? '<span style="font-size:12px;color:#27ae60;font-weight:700">&#10003; Guardado</span>'
-    : empezado
-      ? '<span style="font-size:12px;color:#e74c3c;font-weight:700">&#128274; Cerrado</span>'
-      : '<button class="btn-ok" data-pid="' + p.id + '" data-action="guardar">OK</button>';
-  return '<div class="card ' + (saved?"guardado":empezado?"":"") + '">' +
+    : empezado ? '<span style="font-size:12px;color:#e74c3c;font-weight:700">&#128274; Cerrado</span>'
+    : '<button class="btn-ok" data-pid="' + p.id + '" data-action="guardar">OK</button>';
+
+  var esElim = p.fase !== "Grupos";
+  var savedPenales = saved ? (saved.penales || "") : "";
+  var draftPenales = state.penalesDraft[p.id] !== undefined ? state.penalesDraft[p.id] : savedPenales;
+  var penalesHtml = "";
+  if (esElim) {
+    penalesHtml = '<div class="penales-row">' +
+      '<span>&#x26BD; Penales (si empate):</span>' +
+      '<select class="penales-sel" data-pid="' + p.id + '" data-action="penales" ' + (bloqueado?"disabled":"") + '>' +
+      '<option value="">— Elegir —</option>' +
+      '<option value="local" ' + (draftPenales==="local"?"selected":"") + '>' + p.local + '</option>' +
+      '<option value="visitante" ' + (draftPenales==="visitante"?"selected":"") + '>' + p.visitante + '</option>' +
+      '</select>' +
+      (saved && saved.penales ? '<span style="color:#27ae60;font-size:11px">&#10003; ' + (saved.penales==="local"?p.local:p.visitante) + '</span>' : '') +
+      (tieneRes && p.penales ? '<span style="color:#888;font-size:11px">Real: ' + (p.penales==="local"?p.local:p.visitante) + '</span>' : '') +
+      '</div>';
+  }
+
+  return '<div class="card ' + (saved?"guardado":"") + '">' +
     '<div class="partido-row">' +
     '<span class="equipo right">' + p.local + '</span>' +
     '<input class="goles-inp" style="background:' + bgColor + ';cursor:' + (bloqueado?"not-allowed":"text") + '" type="number" min="0" max="20" value="' + g1 + '" data-pid="' + p.id + '" data-g="g1" ' + (bloqueado?"readonly":"") + '>' +
@@ -351,7 +403,9 @@ function renderPartido(p) {
     estadoBadge +
     (tieneRes ? '<span class="resultado-real">' + p.golesLocal + '-' + p.golesVisit + '</span>' : '') +
     (pts !== null ? '<span class="pts-badge ' + (pts>0?"verde":"rojo") + '">' + (pts>0?"+"+pts:0) + 'pts</span>' : '') +
-    '</div><div class="fecha-info">&#128197; ' + p.fecha + ' ' + p.hora + 'hs EST - ' + p.estadio + '</div></div>';
+    '</div>' +
+    penalesHtml +
+    '<div class="fecha-info">&#128197; ' + p.fecha + ' ' + p.hora + 'hs EST - ' + p.estadio + '</div></div>';
 }
 
 function renderTabla() {
@@ -377,24 +431,15 @@ function renderAdmin() {
     html += '<button class="tab ' + (state.tab===t?"active":"") + '" data-tab="' + t + '">' + label + '</button>';
   });
   html += '</div>';
-
-  if (state.loading) {
-    html += '<div class="loading"><div class="spinner">&#9917;</div><p>Cargando...</p></div>';
-  } else if (state.tab === "solicitudes") {
-    if (!state.solicitudes || state.solicitudes.length === 0) {
+  if (state.loading) { html += '<div class="loading"><div class="spinner">&#9917;</div><p>Cargando...</p></div>'; }
+  else if (state.tab === "solicitudes") {
+    if (!state.solicitudes || !state.solicitudes.length) {
       html += '<p style="color:#aaa;padding:20px">No hay solicitudes pendientes.</p>';
     } else {
       state.solicitudes.forEach(function(s) {
-        html += '<div class="sol-card">' +
-          '<div class="sol-info">' +
-          '<strong>' + s.nombre + '</strong> <span style="color:#888">@' + s.usuario + '</span>' +
-          '<small>Fecha: ' + s.fecha + '</small>' +
-          '<span class="pw-badge">Contrasena: ' + s.password + '</span>' +
-          '</div>' +
-          '<div>' +
-          '<button class="btn-aprobar" data-usuario="' + s.usuario + '" data-nombre="' + s.nombre + '" data-action="aprobar">Aprobar</button>' +
-          '<button class="btn-rechazar" data-usuario="' + s.usuario + '" data-action="rechazar">Rechazar</button>' +
-          '</div></div>';
+        html += '<div class="sol-card"><div class="sol-info"><strong>' + s.nombre + '</strong> <span style="color:#888">@' + s.usuario + '</span><small>' + s.fecha + '</small><span class="pw-badge">pw: ' + s.password + '</span></div>' +
+          '<div><button class="btn-aprobar" data-usuario="' + s.usuario + '" data-nombre="' + s.nombre + '" data-action="aprobar">Aprobar</button>' +
+          '<button class="btn-rechazar" data-usuario="' + s.usuario + '" data-action="rechazar">Rechazar</button></div></div>';
       });
     }
   } else {
@@ -412,33 +457,36 @@ function bindEvents() {
     doLogin();
   };
   var inpP = document.getElementById("inp-p");
-  if (inpP) inpP.onkeydown = function(e) {
-    if (e.key === "Enter") { state.loginForm.u = document.getElementById("inp-u").value; state.loginForm.p = inpP.value; doLogin(); }
-  };
+  if (inpP) inpP.onkeydown = function(e) { if (e.key==="Enter") { state.loginForm.u=document.getElementById("inp-u").value; state.loginForm.p=inpP.value; doLogin(); } };
   var btnSol = document.getElementById("btn-solicitar");
-  if (btnSol) btnSol.onclick = function() { doSolicitud(); };
+  if (btnSol) btnSol.onclick = function() {
+    state.solForm.nombre = document.getElementById("inp-sn").value;
+    state.solForm.password = document.getElementById("inp-sp").value;
+    state.solForm.password2 = document.getElementById("inp-sp2").value;
+    doSolicitud();
+  };
   var btnOut = document.getElementById("btn-logout");
   if (btnOut) btnOut.onclick = function() {
-    state.view = "login"; state.me = null; state.fixture = []; state.pronosticos = {};
-    state.tabla = []; state.drafts = {}; state.solicitudes = [];
-    state.loginForm = {u:"",p:""}; render();
+    state.view="login"; state.me=null; state.fixture=[]; state.pronosticos={}; state.tabla=[]; state.drafts={}; state.penalesDraft={}; state.solicitudes=[];
+    state.loginForm={u:"",p:""}; render();
   };
-  document.querySelectorAll(".tab").forEach(function(btn) {
-    btn.onclick = function() { state.tab = this.dataset.tab; render(); };
-  });
+  document.querySelectorAll(".tab").forEach(function(btn) { btn.onclick = function() { state.tab=this.dataset.tab; render(); }; });
   document.querySelectorAll(".goles-inp").forEach(function(inp) {
     inp.oninput = function() {
-      var pid = this.dataset.pid, g = this.dataset.g;
-      if (!state.drafts[pid]) state.drafts[pid] = {};
-      state.drafts[pid][g] = this.value === "" ? "" : parseInt(this.value);
+      var pid=this.dataset.pid, g=this.dataset.g;
+      if (!state.drafts[pid]) state.drafts[pid]={};
+      state.drafts[pid][g] = this.value===""?"":parseInt(this.value);
     };
   });
   document.querySelectorAll("[data-action='guardar']").forEach(function(btn) {
     btn.onclick = function() {
-      var pid = this.dataset.pid;
-      var partido = state.fixture.find(function(p) { return String(p.id) === String(pid); });
+      var pid=this.dataset.pid;
+      var partido=state.fixture.find(function(p) { return String(p.id)===String(pid); });
       if (partido) guardarProno(partido);
     };
+  });
+  document.querySelectorAll("[data-action='penales']").forEach(function(sel) {
+    sel.onchange = function() { state.penalesDraft[this.dataset.pid] = this.value; };
   });
   document.querySelectorAll("[data-action='aprobar']").forEach(function(btn) {
     btn.onclick = function() { aprobarUsuario(this.dataset.usuario, this.dataset.nombre); };
@@ -448,15 +496,10 @@ function bindEvents() {
   });
   var btnActTabla = document.getElementById("btn-actualizar-tabla");
   if (btnActTabla) btnActTabla.onclick = function() {
-    btnActTabla.textContent = "Actualizando...";
-    btnActTabla.disabled = true;
+    btnActTabla.textContent = "Actualizando..."; btnActTabla.disabled = true;
     apiPost({ action: "recalcularTabla" }).then(function(res) {
-      if (res.ok) {
-        state.tabla = res.tabla;
-        flash("Tabla actualizada!");
-      } else {
-        flash("Error: " + (res.error||""), "#e74c3c");
-      }
+      if (res.ok) { state.tabla = res.tabla; flash("Tabla actualizada!"); }
+      else flash("Error: " + (res.error||""), "#e74c3c");
       render();
     });
   };

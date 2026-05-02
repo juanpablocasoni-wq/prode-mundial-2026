@@ -176,6 +176,28 @@ function rechazarUsuario(usuario) {
 
 var PUNTOS = { Grupos:{exacto:3,resultado:1},"16avos":{exacto:4,resultado:2},Octavos:{exacto:5,resultado:2},Cuartos:{exacto:7,resultado:3},Semis:{exacto:9,resultado:4},Tercero:{exacto:9,resultado:4},Final:{exacto:15,resultado:6} };
 
+function partidoEmpezado(p) {
+  try {
+    var parts = p.fecha.split("/");
+    var day = parseInt(parts[0]), month = parseInt(parts[1]);
+    var hparts = p.hora.split(":");
+    var hour = parseInt(hparts[0]), min = parseInt(hparts[1]);
+    // Horario EST = UTC-5
+    var matchUTC = new Date(Date.UTC(2026, month-1, day, hour+5, min));
+    return new Date() > matchUTC;
+  } catch(e) { return false; }
+}
+
+function sortKey(p) {
+  try {
+    var parts = p.fecha.split("/");
+    var month = parts[1].padStart(2,"0");
+    var day = parts[0].padStart(2,"0");
+    var hora = p.hora.replace(":","").padStart(4,"0");
+    return "2026" + month + day + hora;
+  } catch(e) { return ""; }
+}
+
 function calcPts(prono, partido) {
   if (!prono || partido.golesLocal === "" || partido.golesVisit === "") return null;
   var p = PUNTOS[partido.fase] || PUNTOS.Grupos;
@@ -253,16 +275,14 @@ function renderUsuario() {
     html += '<div class="info-box">Verde = guardado. Exacto: 3pts. Solo resultado: 1pt</div>';
     var partidosGrupos = state.fixture.filter(function(p) { return p.fase === "Grupos"; });
     partidosGrupos.sort(function(a,b) {
-      var pA = a.fecha.split("/"), pB = b.fecha.split("/");
-      var keyA = pA[1] + pA[0] + a.hora.replace(":","");
-      var keyB = pB[1] + pB[0] + b.hora.replace(":","");
-      return keyA < keyB ? -1 : keyA > keyB ? 1 : 0;
+      var ka = sortKey(a), kb = sortKey(b);
+      return ka < kb ? -1 : ka > kb ? 1 : 0;
     });
     var fechaActual = "";
     partidosGrupos.forEach(function(p) {
       if (p.fecha !== fechaActual) {
         fechaActual = p.fecha;
-        html += '<div class="grupo-title">&#128197; ' + p.fecha + '</div>';
+        html += '<div class="grupo-title">&#128197; ' + p.fecha + ' — Grupo ' + p.grupo + '</div>';
       }
       html += renderPartido(p);
     });
@@ -277,23 +297,29 @@ function renderUsuario() {
 
 function renderPartido(p) {
   var saved = state.pronosticos[p.id], draft = state.drafts[p.id] || {};
+  var empezado = partidoEmpezado(p);
+  var bloqueado = saved || empezado;
   var g1 = draft.g1 !== undefined ? draft.g1 : (saved ? saved.g1 : "");
   var g2 = draft.g2 !== undefined ? draft.g2 : (saved ? saved.g2 : "");
   var pts = calcPts(saved, p);
   var tieneRes = p.golesLocal !== "" && p.golesVisit !== "";
-  var bloqueado = saved ? "readonly" : "";
-  var bgColor = saved ? "#eafaf1" : "#fff";
-  return '<div class="card ' + (saved?"guardado":"") + '">' +
+  var bgColor = saved ? "#eafaf1" : empezado ? "#f5f5f5" : "#fff";
+  var estadoBadge = saved
+    ? '<span style="font-size:12px;color:#27ae60;font-weight:700">&#10003; Guardado</span>'
+    : empezado
+      ? '<span style="font-size:12px;color:#e74c3c;font-weight:700">&#128274; Cerrado</span>'
+      : '<button class="btn-ok" data-pid="' + p.id + '" data-action="guardar">OK</button>';
+  return '<div class="card ' + (saved?"guardado":empezado?"":"") + '">' +
     '<div class="partido-row">' +
     '<span class="equipo right">' + p.local + '</span>' +
-    '<input class="goles-inp" style="background:' + bgColor + ';cursor:' + (saved?"not-allowed":"text") + '" type="number" min="0" max="20" value="' + g1 + '" data-pid="' + p.id + '" data-g="g1" ' + bloqueado + '>' +
+    '<input class="goles-inp" style="background:' + bgColor + ';cursor:' + (bloqueado?"not-allowed":"text") + '" type="number" min="0" max="20" value="' + g1 + '" data-pid="' + p.id + '" data-g="g1" ' + (bloqueado?"readonly":"") + '>' +
     '<span class="dash">-</span>' +
-    '<input class="goles-inp" style="background:' + bgColor + ';cursor:' + (saved?"not-allowed":"text") + '" type="number" min="0" max="20" value="' + g2 + '" data-pid="' + p.id + '" data-g="g2" ' + bloqueado + '>' +
+    '<input class="goles-inp" style="background:' + bgColor + ';cursor:' + (bloqueado?"not-allowed":"text") + '" type="number" min="0" max="20" value="' + g2 + '" data-pid="' + p.id + '" data-g="g2" ' + (bloqueado?"readonly":"") + '>' +
     '<span class="equipo">' + p.visitante + '</span>' +
-    (saved ? '<span style="font-size:12px;color:#27ae60;font-weight:700">&#10003; Guardado</span>' : '<button class="btn-ok" data-pid="' + p.id + '" data-action="guardar">OK</button>') +
+    estadoBadge +
     (tieneRes ? '<span class="resultado-real">' + p.golesLocal + '-' + p.golesVisit + '</span>' : '') +
     (pts !== null ? '<span class="pts-badge ' + (pts>0?"verde":"rojo") + '">' + (pts>0?"+"+pts:0) + 'pts</span>' : '') +
-    '</div><div class="fecha-info">&#128197; ' + p.fecha + ' ' + p.hora + 'hs - ' + p.estadio + '</div></div>';
+    '</div><div class="fecha-info">&#128197; ' + p.fecha + ' ' + p.hora + 'hs EST - ' + p.estadio + '</div></div>';
 }
 
 function renderTabla() {

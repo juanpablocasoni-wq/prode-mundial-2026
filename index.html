@@ -53,7 +53,7 @@ body { background: #f4f4f4; min-height: 100vh; }
 .flash { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #27ae60; color: #fff; padding: 10px 20px; border-radius: 10px; font-weight: 600; font-size: 14px; z-index: 999; box-shadow: 0 4px 12px #0003; }
 .loading { text-align: center; padding: 40px; color: #aaa; }
 .spinner { font-size: 36px; animation: spin 1s linear infinite; display: inline-block; }
-@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes spin { from{transform:rotate(0deg);}to{transform:rotate(360deg);} }
 .info-box { background: #f0f7ff; border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; font-size: 13px; color: #3498db; }
 .puntos-ref { background: #f9f9f9; border-radius: 8px; padding: 10px 14px; margin-top: 14px; font-size: 12px; color: #888; }
 .sol-card { background: #fffdf0; border: 1.5px solid #f39c12; border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
@@ -68,170 +68,126 @@ body { background: #f4f4f4; min-height: 100vh; }
 .grupos-tabla tr.clasificado { background: #eafaf1; }
 .grupos-tabla tr.clasificado td:first-child { font-weight: 700; }
 .pts-col { font-weight: 800; color: #c0392b; }
-/* COUNTDOWN */
-.countdown-box { background: linear-gradient(135deg, #c0392b, #e74c3c); color: #fff; border-radius: 14px; padding: 20px; margin-bottom: 16px; text-align: center; }
-.countdown-title { font-size: 13px; opacity: 0.85; margin-bottom: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
-.countdown-nums { display: flex; justify-content: center; gap: 12px; }
-.countdown-unit { display: flex; flex-direction: column; align-items: center; }
-.countdown-num { font-size: 36px; font-weight: 800; line-height: 1; }
-.countdown-label { font-size: 11px; opacity: 0.7; margin-top: 2px; }
-.countdown-sep { font-size: 30px; font-weight: 800; opacity: 0.5; padding-top: 2px; }
-/* CAMPEON */
-.campeon-card { background: linear-gradient(135deg, #f39c12, #e67e22); color: #fff; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
-.campeon-title { font-size: 14px; font-weight: 700; margin-bottom: 10px; }
-.campeon-sel { width: 100%; padding: 10px 12px; border-radius: 8px; border: none; font-size: 14px; font-weight: 600; margin-bottom: 8px; }
-.btn-campeon { padding: 8px 16px; background: rgba(0,0,0,0.2); color: #fff; border: none; border-radius: 7px; cursor: pointer; font-weight: 700; font-size: 13px; }
+.countdown-box { background: linear-gradient(135deg,#c0392b,#e74c3c); color:#fff; border-radius:14px; padding:20px; margin-bottom:16px; text-align:center; }
+.countdown-title { font-size:13px; opacity:0.85; margin-bottom:10px; font-weight:600; letter-spacing:1px; text-transform:uppercase; }
+.countdown-nums { display:flex; justify-content:center; gap:12px; }
+.countdown-unit { display:flex; flex-direction:column; align-items:center; }
+.countdown-num { font-size:36px; font-weight:800; line-height:1; }
+.countdown-label { font-size:11px; opacity:0.7; margin-top:2px; }
+.countdown-sep { font-size:30px; font-weight:800; opacity:0.5; padding-top:2px; }
+.campeon-card { background:linear-gradient(135deg,#f39c12,#e67e22); color:#fff; border-radius:12px; padding:16px; margin-bottom:16px; }
+.campeon-title { font-size:14px; font-weight:700; margin-bottom:10px; }
+.campeon-sel { width:100%; padding:10px 12px; border-radius:8px; border:none; font-size:14px; font-weight:600; margin-bottom:8px; }
+.btn-campeon { padding:8px 16px; background:rgba(0,0,0,0.2); color:#fff; border:none; border-radius:7px; cursor:pointer; font-weight:700; font-size:13px; }
 </style>
 </head>
 <body>
 <div id="app"></div>
 <script>
 var API_URL = "https://script.google.com/macros/s/AKfycbzOvBbw0swCb9oOaD7bbdrtNW-aMQw8cvVJqHlMdo8i13U_icwP1VQORc7NuanmO5w/exec";
-
-var EQUIPOS = ["Alemania","Arabia Saudi","Argelia","Argentina","Australia","Austria","Belgica","Bosnia y Herzegovina","Brasil","Canada","Cabo Verde","Colombia","Corea del Sur — Rep. de Corea","Croacia","Curazao","Costa de Marfil","Ecuador","Egipto","Escocia","Espana","Estados Unidos","Francia","Ghana","Haiti","Inglaterra","Iran","Irak","Japon","Jordania","Marruecos","Mexico","Nueva Zelanda","Noruega","Paises Bajos","Panama","Paraguay","Portugal","Qatar","RD Congo","Rep. Checa","Senegal","Sudafrica","Suecia","Suiza","Tunez","Uruguay","Uzbekistan"];
-
-// Primer partido: 11 junio 2026 15:00 EST = 20:00 UTC
+var EQUIPOS = ["Alemania","Arabia Saudi","Argelia","Argentina","Australia","Austria","Belgica","Bosnia y Herzegovina","Brasil","Canada","Cabo Verde","Colombia","Rep. de Corea","Croacia","Curazao","Costa de Marfil","Ecuador","Egipto","Escocia","Espana","Estados Unidos","Francia","Ghana","Haiti","Inglaterra","Iran","Irak","Japon","Jordania","Marruecos","Mexico","Nueva Zelanda","Noruega","Paises Bajos","Panama","Paraguay","Portugal","Qatar","RD Congo","Rep. Checa","Senegal","Sudafrica","Suecia","Suiza","Tunez","Uruguay","Uzbekistan"];
 var PRIMER_PARTIDO_UTC = new Date(Date.UTC(2026,5,11,20,0,0));
 
 var state = {
-  view:"login", me:null, fixture:[], pronosticos:{}, tabla:[], solicitudes:[],
-  tab:"grupos", loading:false, flash:null,
-  loginForm:{u:"",p:""}, solForm:{nombre:"",password:"",password2:""},
-  loginErr:"", solMsg:"", drafts:{}, penalesDraft:{},
-  campeonDraft:"", campeonGuardado:""
+  view:"login",me:null,fixture:[],pronosticos:{},tabla:[],solicitudes:[],
+  tab:"grupos",loading:false,flash:null,
+  loginForm:{u:"",p:""},solForm:{nombre:"",password:"",password2:""},
+  loginErr:"",solMsg:"",drafts:{},penalesDraft:{},
+  campeonDraft:"",campeonGuardado:""
 };
 
-function apiGet(params) {
-  var qs = Object.keys(params).map(function(k){return k+"="+encodeURIComponent(params[k]);}).join("&");
-  return fetch(API_URL+"?"+qs).then(function(r){return r.json();});
-}
-function apiPost(data) {
-  return fetch(API_URL,{method:"POST",body:JSON.stringify(data)}).then(function(r){return r.json();});
-}
-function flash(msg,color) {
-  state.flash={msg:msg,color:color||"#27ae60"};render();
-  setTimeout(function(){state.flash=null;render();},2500);
-}
+function apiGet(p){var qs=Object.keys(p).map(function(k){return k+"="+encodeURIComponent(p[k]);}).join("&");return fetch(API_URL+"?"+qs).then(function(r){return r.json();});}
+function apiPost(d){return fetch(API_URL,{method:"POST",body:JSON.stringify(d)}).then(function(r){return r.json();});}
+function flash(msg,color){state.flash={msg:msg,color:color||"#27ae60"};render();setTimeout(function(){state.flash=null;render();},2500);}
 
-// ── AUTH ───────────────────────────────────────────────────────
-function doLogin() {
+function doLogin(){
   state.loginErr="";render();
   apiGet({action:"login",usuario:state.loginForm.u,password:state.loginForm.p})
     .then(function(res){
-      if(res.ok){
-        state.me=res; state.me.username=state.loginForm.u;
-        state.view=res.isAdmin?"admin":"usuario";
-        state.tab=res.isAdmin?"solicitudes":"grupos";
-        loadData();
-      } else { state.loginErr=res.error||"Usuario o contrasena incorrectos"; render(); }
-    }).catch(function(){state.loginErr="Error de conexion. Intenta de nuevo.";render();});
+      if(res.ok){state.me=res;state.me.username=state.loginForm.u;state.view=res.isAdmin?"admin":"usuario";state.tab=res.isAdmin?"solicitudes":"grupos";loadData();}
+      else{state.loginErr=res.error||"Usuario o contrasena incorrectos";render();}
+    }).catch(function(){state.loginErr="Error de conexion.";render();});
 }
 
-function doSolicitud() {
-  var nombre=state.solForm.nombre.trim();
-  var pw=state.solForm.password, pw2=state.solForm.password2;
-  if(!nombre){state.solMsg="Ingresa tu nombre o apodo.";render();return;}
+function doSolicitud(){
+  var nombre=state.solForm.nombre.trim(),pw=state.solForm.password,pw2=state.solForm.password2;
+  if(!nombre){state.solMsg="Ingresa tu nombre.";render();return;}
   if(!pw||pw.length<4){state.solMsg="La contrasena debe tener al menos 4 caracteres.";render();return;}
   if(pw!==pw2){state.solMsg="Las contrasenas no coinciden.";render();return;}
-  var usuario=nombre.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/\s+/g,"").replace(/[^a-z0-9]/g,"");
-  apiPost({action:"solicitarAcceso",usuario:usuario,nombre:nombre,password:pw})
-    .then(function(res){
-      state.solMsg=res.ok?"Solicitud enviada! El admin te aprueba pronto. Tu usuario sera: "+usuario:(res.error||"Error");
-      render();
-    }).catch(function(){state.solMsg="Error de conexion.";render();});
+  var u=nombre.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/\s+/g,"").replace(/[^a-z0-9]/g,"");
+  apiPost({action:"solicitarAcceso",usuario:u,nombre:nombre,password:pw})
+    .then(function(res){state.solMsg=res.ok?"Solicitud enviada! Tu usuario sera: "+u:(res.error||"Error");render();})
+    .catch(function(){state.solMsg="Error de conexion.";render();});
 }
 
-// ── DATA ───────────────────────────────────────────────────────
-function loadData() {
-  state.loading=true;
-  var cached=sessionStorage.getItem("prode_fixture_v2");
-  if(cached){
-    state.fixture=JSON.parse(cached);
+// FIX: sin cache, siempre trae fixture fresco para que posiciones se actualice
+function loadData(){
+  state.loading=true;render();
+  apiGet({action:"getFixture"}).then(function(res){
+    if(res.ok)state.fixture=res.partidos;
     state.loading=false;render();cargarResto();
-  } else {
-    render();
-    apiGet({action:"getFixture"}).then(function(res){
-      if(res.ok){state.fixture=res.partidos;sessionStorage.setItem("prode_fixture_v2",JSON.stringify(res.partidos));}
-      state.loading=false;render();cargarResto();
-    }).catch(function(){state.loading=false;render();});
-  }
+  }).catch(function(){state.loading=false;render();});
 }
 
-function cargarResto() {
+function cargarResto(){
   var promises=[apiGet({action:"getTabla"})];
-  if(state.me&&!state.me.isAdmin) promises.push(apiGet({action:"getPronosticos",usuario:state.me.username}));
-  if(state.me&&state.me.isAdmin) promises.push(apiGet({action:"getSolicitudes"}));
-  Promise.all(promises).then(function(results){
-    if(results[0]&&results[0].ok) state.tabla=results[0].tabla;
-    if(results[1]&&results[1].ok){
-      if(state.me.isAdmin) state.solicitudes=results[1].solicitudes;
-      else {
-        state.pronosticos=results[1].pronosticos;
-        state.campeonGuardado=results[1].campeon||"";
-        state.campeonDraft=results[1].campeon||"";
-      }
+  if(state.me&&!state.me.isAdmin)promises.push(apiGet({action:"getPronosticos",usuario:state.me.username}));
+  if(state.me&&state.me.isAdmin)promises.push(apiGet({action:"getSolicitudes"}));
+  Promise.all(promises).then(function(r){
+    if(r[0]&&r[0].ok)state.tabla=r[0].tabla;
+    if(r[1]&&r[1].ok){
+      if(state.me.isAdmin)state.solicitudes=r[1].solicitudes;
+      else{state.pronosticos=r[1].pronosticos;state.campeonGuardado=r[1].campeon||"";state.campeonDraft=r[1].campeon||"";}
     }
     render();
   }).catch(function(){});
 }
 
-// ── HELPERS ────────────────────────────────────────────────────
-function getGanador(g1,g2,penales){
-  if(g1>g2)return"local"; if(g1<g2)return"visitante"; return penales||null;
-}
-
+function getGanador(g1,g2,p){if(g1>g2)return"local";if(g1<g2)return"visitante";return p||null;}
 var PUNTOS={Grupos:{exacto:3,resultado:1},"16avos":{exacto:4,resultado:2},Octavos:{exacto:5,resultado:2},Cuartos:{exacto:7,resultado:3},Semis:{exacto:9,resultado:4},Tercero:{exacto:9,resultado:4},Final:{exacto:15,resultado:6}};
 
-function calcPts(prono,partido){
-  if(!prono||partido.golesLocal===""||partido.golesVisit==="")return null;
-  var p=PUNTOS[partido.fase]||PUNTOS.Grupos;
-  var g1r=Number(partido.golesLocal),g2r=Number(partido.golesVisit);
-  var g1p=Number(prono.g1),g2p=Number(prono.g2);
-  if(partido.fase==="Grupos"){
-    if(g1p===g1r&&g2p===g2r)return p.exacto;
-    return Math.sign(g1p-g2p)===Math.sign(g1r-g2r)?p.resultado:0;
-  }
-  var realGana=getGanador(g1r,g2r,partido.penales);
-  var pronoGana=getGanador(g1p,g2p,prono.penales);
-  if(!realGana||!pronoGana)return null;
-  if(g1p===g1r&&g2p===g2r&&prono.penales===partido.penales)return p.exacto;
-  if(pronoGana===realGana)return p.resultado;
+function calcPts(prono,p){
+  if(!prono||p.golesLocal===""||p.golesVisit==="")return null;
+  var pts=PUNTOS[p.fase]||PUNTOS.Grupos;
+  var g1r=Number(p.golesLocal),g2r=Number(p.golesVisit),g1p=Number(prono.g1),g2p=Number(prono.g2);
+  if(p.fase==="Grupos"){if(g1p===g1r&&g2p===g2r)return pts.exacto;return Math.sign(g1p-g2p)===Math.sign(g1r-g2r)?pts.resultado:0;}
+  var rG=getGanador(g1r,g2r,p.penales),pG=getGanador(g1p,g2p,prono.penales);
+  if(!rG||!pG)return null;
+  if(g1p===g1r&&g2p===g2r&&prono.penales===p.penales)return pts.exacto;
+  if(pG===rG)return pts.resultado;
   return 0;
 }
 
 function partidoEmpezado(p){
-  try{
-    var parts=p.fecha.split("/");
-    var utc=new Date(Date.UTC(2026,parseInt(parts[1])-1,parseInt(parts[0]),parseInt(p.hora.split(":")[0])+5,parseInt(p.hora.split(":")[1])));
-    return new Date()>utc;
-  }catch(e){return false;}
+  try{var parts=p.fecha.split("/");var utc=new Date(Date.UTC(2026,parseInt(parts[1])-1,parseInt(parts[0]),parseInt(p.hora.split(":")[0])+5,parseInt(p.hora.split(":")[1])));return new Date()>utc;}catch(e){return false;}
 }
-
-function sortKey(p){
-  try{
-    var parts=p.fecha.split("/");
-    return"2026"+parts[1].padStart(2,"0")+parts[0].padStart(2,"0")+p.hora.replace(":","").padStart(4,"0");
-  }catch(e){return"";}
-}
-
+function sortKey(p){try{var parts=p.fecha.split("/");return"2026"+parts[1].padStart(2,"0")+parts[0].padStart(2,"0")+p.hora.replace(":","").padStart(4,"0");}catch(e){return"";}}
 function getGrupos(){var g=[];state.fixture.forEach(function(p){if(p.fase==="Grupos"&&g.indexOf(p.grupo)<0)g.push(p.grupo);});return g.sort();}
-function getFases(){var o=["16avos","Octavos","Cuartos","Semis","Tercero","Final"],f=[];o.forEach(function(x){if(state.fixture.some(function(p){return p.fase===x;}))f.push(x);});return f;}
+
+// FIX: solo mostrar fases con equipos reales definidos
+function getFases(){
+  var orden=["16avos","Octavos","Cuartos","Semis","Tercero","Final"],f=[];
+  orden.forEach(function(x){
+    var ok=state.fixture.some(function(p){
+      return p.fase===x&&p.local&&!p.local.match(/^(Ganador|Perdedor|1ro|2do|3ro)/)&&p.visitante&&!p.visitante.match(/^(Ganador|Perdedor|1ro|2do|3ro)/);
+    });
+    if(ok)f.push(x);
+  });
+  return f;
+}
+
 function avatarColor(n){var c=["#e74c3c","#3498db","#2ecc71","#f39c12","#9b59b6","#1abc9c","#e67e22","#16a085"];return c[(n||"A").charCodeAt(0)%c.length];}
 
-// ── GUARDAR PRONO ──────────────────────────────────────────────
 function guardarProno(partido){
-  var d=state.drafts[partido.id]||{};
-  var saved=state.pronosticos[partido.id]||{};
-  var g1=d.g1!==undefined?d.g1:saved.g1;
-  var g2=d.g2!==undefined?d.g2:saved.g2;
-  var penales=state.penalesDraft[partido.id]!==undefined?state.penalesDraft[partido.id]:(saved.penales||"");
+  var d=state.drafts[partido.id]||{},saved=state.pronosticos[partido.id]||{};
+  var g1=d.g1!==undefined?d.g1:saved.g1,g2=d.g2!==undefined?d.g2:saved.g2;
+  var pen=state.penalesDraft[partido.id]!==undefined?state.penalesDraft[partido.id]:(saved.penales||"");
   if(g1===""||g1===undefined||g2===""||g2===undefined){flash("Completa ambos goles","#e74c3c");return;}
-  if(partido.fase!=="Grupos"&&Number(g1)===Number(g2)&&!penales){flash("Predijiste empate — elegi quien gana en penales","#e74c3c");return;}
-  state.pronosticos[partido.id]={g1:Number(g1),g2:Number(g2),penales:penales};
+  if(partido.fase!=="Grupos"&&Number(g1)===Number(g2)&&!pen){flash("Predijiste empate — elegi quien gana en penales","#e74c3c");return;}
+  state.pronosticos[partido.id]={g1:Number(g1),g2:Number(g2),penales:pen};
   delete state.drafts[partido.id];delete state.penalesDraft[partido.id];
   flash("Guardado");render();
-  apiPost({action:"guardarPronostico",usuario:state.me.username,partidoId:partido.id,g1:Number(g1),g2:Number(g2),penales:penales})
-    .catch(function(){flash("Error al guardar","#e74c3c");});
+  apiPost({action:"guardarPronostico",usuario:state.me.username,partidoId:partido.id,g1:Number(g1),g2:Number(g2),penales:pen}).catch(function(){flash("Error al guardar","#e74c3c");});
 }
 
 function guardarCampeon(){
@@ -239,14 +195,12 @@ function guardarCampeon(){
   if(!sel||!sel.value){flash("Elegi un equipo","#e74c3c");return;}
   state.campeonGuardado=sel.value;state.campeonDraft=sel.value;
   flash("Campeon guardado! +20pts si acertas");render();
-  apiPost({action:"guardarCampeon",usuario:state.me.username,campeon:sel.value})
-    .catch(function(){flash("Error al guardar","#e74c3c");});
+  apiPost({action:"guardarCampeon",usuario:state.me.username,campeon:sel.value}).catch(function(){flash("Error al guardar","#e74c3c");});
 }
 
 function aprobarUsuario(u,n){apiPost({action:"aprobarUsuario",usuario:u}).then(function(res){if(res.ok){flash(n+" aprobado");state.solicitudes=state.solicitudes.filter(function(s){return s.usuario!==u;});render();}});}
 function rechazarUsuario(u){apiPost({action:"rechazarUsuario",usuario:u}).then(function(res){if(res.ok){state.solicitudes=state.solicitudes.filter(function(s){return s.usuario!==u;});flash("Rechazado");render();}});}
 
-// ── POSICIONES GRUPOS ──────────────────────────────────────────
 function calcPos(){
   var grupos={};
   state.fixture.filter(function(p){return p.fase==="Grupos";}).forEach(function(p){
@@ -262,28 +216,18 @@ function calcPos(){
   return grupos;
 }
 
-// ── COUNTDOWN ──────────────────────────────────────────────────
 function renderCountdown(){
-  var now=new Date(), diff=PRIMER_PARTIDO_UTC-now;
+  var now=new Date(),diff=PRIMER_PARTIDO_UTC-now;
   if(diff<=0)return'<div class="countdown-box"><div class="countdown-title">&#9917; El Mundial ya empezo!</div></div>';
-  var d=Math.floor(diff/86400000);
-  var h=Math.floor((diff%86400000)/3600000);
-  var m=Math.floor((diff%3600000)/60000);
-  var s=Math.floor((diff%60000)/1000);
-  return'<div class="countdown-box">'+
-    '<div class="countdown-title">&#9917; Faltan para el primer partido</div>'+
-    '<div class="countdown-nums">'+
-    '<div class="countdown-unit"><span class="countdown-num">'+String(d).padStart(2,"0")+'</span><span class="countdown-label">dias</span></div>'+
-    '<span class="countdown-sep">:</span>'+
-    '<div class="countdown-unit"><span class="countdown-num">'+String(h).padStart(2,"0")+'</span><span class="countdown-label">hs</span></div>'+
-    '<span class="countdown-sep">:</span>'+
-    '<div class="countdown-unit"><span class="countdown-num">'+String(m).padStart(2,"0")+'</span><span class="countdown-label">min</span></div>'+
-    '<span class="countdown-sep">:</span>'+
+  var d=Math.floor(diff/86400000),h=Math.floor((diff%86400000)/3600000),m=Math.floor((diff%3600000)/60000),s=Math.floor((diff%60000)/1000);
+  return'<div class="countdown-box"><div class="countdown-title">&#9917; Faltan para el primer partido</div><div class="countdown-nums">'+
+    '<div class="countdown-unit"><span class="countdown-num">'+String(d).padStart(2,"0")+'</span><span class="countdown-label">dias</span></div><span class="countdown-sep">:</span>'+
+    '<div class="countdown-unit"><span class="countdown-num">'+String(h).padStart(2,"0")+'</span><span class="countdown-label">hs</span></div><span class="countdown-sep">:</span>'+
+    '<div class="countdown-unit"><span class="countdown-num">'+String(m).padStart(2,"0")+'</span><span class="countdown-label">min</span></div><span class="countdown-sep">:</span>'+
     '<div class="countdown-unit"><span class="countdown-num">'+String(s).padStart(2,"0")+'</span><span class="countdown-label">seg</span></div>'+
     '</div></div>';
 }
 
-// ── RENDER ─────────────────────────────────────────────────────
 function render(){
   var html="";
   if(state.flash)html+='<div class="flash" style="background:'+state.flash.color+'">'+state.flash.msg+'</div>';
@@ -292,26 +236,21 @@ function render(){
   else if(state.view==="admin")html+=renderHeader()+renderAdmin();
   document.getElementById("app").innerHTML=html;
   bindEvents();
-  // Actualizar countdown cada segundo
   if(state.view==="usuario"){
     clearInterval(window._cdInterval);
-    window._cdInterval=setInterval(function(){
-      var el=document.getElementById("countdown-wrap");
-      if(el)el.innerHTML=renderCountdown();
-    },1000);
+    window._cdInterval=setInterval(function(){var el=document.getElementById("countdown-wrap");if(el)el.innerHTML=renderCountdown();},1000);
   }
 }
 
 function renderLogin(){
   return'<div class="container"><div class="login-box">'+
-    '<div class="emoji">&#9917;</div>'+
-    '<h2>Prode Mundial 2026</h2><p class="sub">Solo usuarios habilitados</p>'+
+    '<div class="emoji">&#9917;</div><h2>Prode Mundial 2026</h2><p class="sub">Solo usuarios habilitados</p>'+
     '<input class="inp" id="inp-u" type="text" placeholder="Usuario" value="'+state.loginForm.u+'">'+
     '<input class="inp" id="inp-p" type="password" placeholder="Contrasena" value="'+state.loginForm.p+'">'+
     (state.loginErr?'<p class="error">'+state.loginErr+'</p>':'')+
     '<button class="btn-primary" id="btn-login">Entrar</button>'+
     '<div class="divider"></div><p class="divider-label">No tenes acceso? Pedile al admin</p>'+
-    '<input class="inp" id="inp-sn" type="text" placeholder="Tu nombre o apodo (ej: Juan Pablo)" value="'+state.solForm.nombre+'">'+
+    '<input class="inp" id="inp-sn" type="text" placeholder="Tu nombre o apodo" value="'+state.solForm.nombre+'">'+
     '<input class="inp" id="inp-sp" type="password" placeholder="Elegi una contrasena" value="'+(state.solForm.password||"")+'">'+
     '<input class="inp" id="inp-sp2" type="password" placeholder="Repeti la contrasena" value="'+(state.solForm.password2||"")+'">'+
     '<button class="btn-secondary" id="btn-solicitar">Solicitar acceso</button>'+
@@ -338,7 +277,6 @@ function renderUsuario(){
     html+='<button class="tab '+(state.tab===t?"active":"")+'" data-tab="'+t+'">'+label+'</button>';
   });
   html+='</div>';
-
   if(state.loading){html+='<div class="loading"><div class="spinner">&#9917;</div><p>Cargando...</p></div>';}
   else if(state.tab==="tabla"){html+=renderTabla();}
   else if(state.tab==="posiciones"){html+=renderPosiciones();}
@@ -347,14 +285,11 @@ function renderUsuario(){
     html+='<div class="info-box">Verde = guardado. Exacto: 3pts. Solo resultado: 1pt</div>';
     var pg=state.fixture.filter(function(p){return p.fase==="Grupos";});
     pg.sort(function(a,b){var ka=sortKey(a),kb=sortKey(b);return ka<kb?-1:ka>kb?1:0;});
-    var fechaActual="";
-    pg.forEach(function(p){
-      if(p.fecha!==fechaActual){fechaActual=p.fecha;html+='<div class="grupo-title">&#128197; '+p.fecha+'</div>';}
-      html+=renderPartido(p);
-    });
+    var fa="";
+    pg.forEach(function(p){if(p.fecha!==fa){fa=p.fecha;html+='<div class="grupo-title">&#128197; '+p.fecha+'</div>';}html+=renderPartido(p);});
   } else {
-    var ptsInfo=PUNTOS[state.tab]||{};
-    html+='<div class="info-box">Exacto: '+ptsInfo.exacto+'pts | Solo resultado: '+ptsInfo.resultado+'pts | Si hay empate, penes definen quien avanza.</div>';
+    var pi=PUNTOS[state.tab]||{};
+    html+='<div class="info-box">Exacto: '+pi.exacto+'pts | Solo resultado: '+pi.resultado+'pts | Si hay empate, penales definen quien avanza.</div>';
     state.fixture.filter(function(p){return p.fase===state.tab;}).forEach(function(p){html+=renderPartido(p);});
   }
   html+='<div class="puntos-ref">Grupos 3/1 - 16avos 4/2 - Octavos 5/2 - Cuartos 7/3 - Semis 9/4 - Final 15/6 - Campeon 20pts</div></div>';
@@ -363,42 +298,32 @@ function renderUsuario(){
 
 function renderPartido(p){
   var saved=state.pronosticos[p.id],draft=state.drafts[p.id]||{};
-  var empezado=partidoEmpezado(p);
-  var bloqueado=saved||empezado;
-  var g1=draft.g1!==undefined?draft.g1:(saved?saved.g1:"");
-  var g2=draft.g2!==undefined?draft.g2:(saved?saved.g2:"");
-  var pts=calcPts(saved,p);
-  var tieneRes=p.golesLocal!==""&&p.golesVisit!=="";
-  var bgColor=saved?"#eafaf1":empezado?"#f5f5f5":"#fff";
-  var badge=saved
-    ?'<span style="font-size:12px;color:#27ae60;font-weight:700">&#10003; Guardado</span>'
-    :empezado?'<span style="font-size:12px;color:#e74c3c;font-weight:700">&#128274; Cerrado</span>'
-    :'<button class="btn-ok" data-pid="'+p.id+'" data-action="guardar">OK</button>';
-
+  var emp=partidoEmpezado(p),bloq=saved||emp;
+  var g1=draft.g1!==undefined?draft.g1:(saved?saved.g1:""),g2=draft.g2!==undefined?draft.g2:(saved?saved.g2:"");
+  var pts=calcPts(saved,p),tieneRes=p.golesLocal!==""&&p.golesVisit!=="";
+  var bg=saved?"#eafaf1":emp?"#f5f5f5":"#fff";
+  var badge=saved?'<span style="font-size:12px;color:#27ae60;font-weight:700">&#10003; Guardado</span>':emp?'<span style="font-size:12px;color:#e74c3c;font-weight:700">&#128274; Cerrado</span>':'<button class="btn-ok" data-pid="'+p.id+'" data-action="guardar">OK</button>';
   var esElim=p.fase!=="Grupos";
-  var savedPen=saved?(saved.penales||""):"";
-  var draftPen=state.penalesDraft[p.id]!==undefined?state.penalesDraft[p.id]:savedPen;
+  var sPen=saved?(saved.penales||""):"",dPen=state.penalesDraft[p.id]!==undefined?state.penalesDraft[p.id]:sPen;
   var penHtml="";
   if(esElim){
     penHtml='<div class="penales-row">&#x26BD; Si hay empate, gana en penales:'+
-      '<select class="penales-sel" data-pid="'+p.id+'" data-action="penales" '+(bloqueado?"disabled":"")+'>'+
+      '<select class="penales-sel" data-pid="'+p.id+'" data-action="penales" '+(bloq?"disabled":"")+'>'+
       '<option value="">— Elegir —</option>'+
-      '<option value="local" '+(draftPen==="local"?"selected":"")+'>'+p.local+'</option>'+
-      '<option value="visitante" '+(draftPen==="visitante"?"selected":"")+'>'+p.visitante+'</option>'+
+      '<option value="local" '+(dPen==="local"?"selected":"")+'>'+p.local+'</option>'+
+      '<option value="visitante" '+(dPen==="visitante"?"selected":"")+'>'+p.visitante+'</option>'+
       '</select>'+
-      (saved&&savedPen?'<span style="color:#27ae60;font-size:11px">&#10003; '+( savedPen==="local"?p.local:p.visitante)+'</span>':'')+
+      (saved&&sPen?'<span style="color:#27ae60;font-size:11px">&#10003; '+(sPen==="local"?p.local:p.visitante)+'</span>':'')+
       (tieneRes&&p.penales?'<span style="color:#888;font-size:11px">Real: '+(p.penales==="local"?p.local:p.visitante)+'</span>':'')+
       '</div>';
   }
-
-  return'<div class="card '+(saved?"guardado":empezado?"cerrado":"")+'">'+
+  return'<div class="card '+(saved?"guardado":emp?"cerrado":"")+'">'+
     '<div class="partido-row">'+
     '<span class="equipo right">'+p.local+'</span>'+
-    '<input class="goles-inp" style="background:'+bgColor+';cursor:'+(bloqueado?"not-allowed":"text")+'" type="number" min="0" max="20" value="'+g1+'" data-pid="'+p.id+'" data-g="g1" '+(bloqueado?"readonly":"")+'>'+
+    '<input class="goles-inp" style="background:'+bg+';cursor:'+(bloq?"not-allowed":"text")+'" type="number" min="0" max="20" value="'+g1+'" data-pid="'+p.id+'" data-g="g1" '+(bloq?"readonly":"")+'>'+
     '<span class="dash">-</span>'+
-    '<input class="goles-inp" style="background:'+bgColor+';cursor:'+(bloqueado?"not-allowed":"text")+'" type="number" min="0" max="20" value="'+g2+'" data-pid="'+p.id+'" data-g="g2" '+(bloqueado?"readonly":"")+'>'+
-    '<span class="equipo">'+p.visitante+'</span>'+
-    badge+
+    '<input class="goles-inp" style="background:'+bg+';cursor:'+(bloq?"not-allowed":"text")+'" type="number" min="0" max="20" value="'+g2+'" data-pid="'+p.id+'" data-g="g2" '+(bloq?"readonly":"")+'>'+
+    '<span class="equipo">'+p.visitante+'</span>'+badge+
     (tieneRes?'<span class="resultado-real">'+p.golesLocal+'-'+p.golesVisit+'</span>':'')+
     (pts!==null?'<span class="pts-badge '+(pts>0?"verde":"rojo")+'">'+(pts>0?"+"+pts:0)+'pts</span>':'')+
     '</div>'+penHtml+
@@ -406,44 +331,28 @@ function renderPartido(p){
 }
 
 function renderCampeon(){
-  var guardado=state.campeonGuardado;
-  var realCampeon=""; // el admin lo carga cuando termine el torneo
+  var g=state.campeonGuardado;
   return'<div class="campeon-card">'+
     '<div class="campeon-title">&#127942; Pronostica el Campeon del Mundial 2026</div>'+
     '<p style="font-size:12px;opacity:0.85;margin-bottom:10px">Si acertas el campeon: <b>+20 puntos</b></p>'+
-    (guardado
-      ?'<div style="font-size:16px;font-weight:800;margin-bottom:8px">&#10003; Tu pronostico: '+guardado+'</div>'+
-       '<select class="campeon-sel" id="sel-campeon"><option value="">Cambiar...</option>'+EQUIPOS.map(function(e){return'<option value="'+e+'" '+(e===guardado?"selected":"")+'>'+e+'</option>';}).join('')+'</select>'
-      :'<select class="campeon-sel" id="sel-campeon"><option value="">Elegi un equipo...</option>'+EQUIPOS.map(function(e){return'<option value="'+e+'">'+e+'</option>';}).join('')+'</select>'
-    )+
-    '<button class="btn-campeon" id="btn-guardar-campeon">'+(guardado?"Actualizar campeon":"Guardar campeon")+'</button>'+
+    (g?'<div style="font-size:16px;font-weight:800;margin-bottom:8px">&#10003; Tu pronostico: '+g+'</div>':"")+
+    '<select class="campeon-sel" id="sel-campeon"><option value="">Elegi un equipo...</option>'+EQUIPOS.map(function(e){return'<option value="'+e+'" '+(e===g?"selected":"")+'>'+e+'</option>';}).join('')+'</select>'+
+    '<button class="btn-campeon" id="btn-guardar-campeon">'+(g?"Actualizar campeon":"Guardar campeon")+'</button>'+
     '</div>'+
     '<div class="info-box">Podes cambiar tu pronostico hasta que empiece el torneo el 11 de junio.</div>';
 }
 
 function renderPosiciones(){
-  var grupos=calcPos();
-  var grpKeys=Object.keys(grupos).sort();
+  var grupos=calcPos(),grpKeys=Object.keys(grupos).sort();
   if(!grpKeys.length)return'<p style="color:#aaa;padding:20px">Aun no hay resultados cargados.</p>';
   var html="";
   grpKeys.forEach(function(grp){
     var arr=[];
     Object.keys(grupos[grp]).forEach(function(eq){arr.push({nombre:eq,t:grupos[grp][eq]});});
-    arr.sort(function(a,b){
-      if(b.t.pts!==a.t.pts)return b.t.pts-a.t.pts;
-      var gda=a.t.gf-a.t.gc,gdb=b.t.gf-b.t.gc;
-      if(gdb!==gda)return gdb-gda;
-      return b.t.gf-a.t.gf;
-    });
+    arr.sort(function(a,b){if(b.t.pts!==a.t.pts)return b.t.pts-a.t.pts;var gda=a.t.gf-a.t.gc,gdb=b.t.gf-b.t.gc;if(gdb!==gda)return gdb-gda;return b.t.gf-a.t.gf;});
     html+='<div class="grupo-title">Grupo '+grp+'</div>';
     html+='<table class="grupos-tabla"><tr><th>Equipo</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>DG</th><th>Pts</th></tr>';
-    arr.forEach(function(e,i){
-      var t=e.t;
-      html+='<tr class="'+(i<2?"clasificado":"")+'">'+'<td>'+(i<2?'<span style="color:#27ae60">&#10003;</span> ':"")+e.nombre+'</td>'+
-        '<td>'+t.pj+'</td><td>'+t.pg+'</td><td>'+t.pe+'</td><td>'+t.pp+'</td>'+
-        '<td>'+t.gf+'</td><td>'+t.gc+'</td><td>'+(t.gf-t.gc)+'</td>'+
-        '<td class="pts-col">'+t.pts+'</td></tr>';
-    });
+    arr.forEach(function(e,i){var t=e.t;html+='<tr class="'+(i<2?"clasificado":"")+'"><td>'+(i<2?'<span style="color:#27ae60">&#10003;</span> ':"")+e.nombre+'</td><td>'+t.pj+'</td><td>'+t.pg+'</td><td>'+t.pe+'</td><td>'+t.pp+'</td><td>'+t.gf+'</td><td>'+t.gc+'</td><td>'+(t.gf-t.gc)+'</td><td class="pts-col">'+t.pts+'</td></tr>';});
     html+='</table>';
   });
   return html;
@@ -451,16 +360,12 @@ function renderPosiciones(){
 
 function renderTabla(){
   if(!state.tabla.length)return'<p style="color:#aaa;padding:20px">Aun no hay puntos cargados.</p>';
-  var medals=["1ro","2do","3ro"];
-  var html='<div style="font-weight:700;font-size:16px;color:#c0392b;margin-bottom:12px">&#127942; Tabla de posiciones</div>';
+  var medals=["1ro","2do","3ro"],html='<div style="font-weight:700;font-size:16px;color:#c0392b;margin-bottom:12px">&#127942; Tabla de posiciones</div>';
   state.tabla.forEach(function(u,i){
     var esYo=state.me&&u.nombre===state.me.displayName;
-    html+='<div class="tabla-row '+(esYo?"me":"")+'">'+
-      '<span class="tabla-pos">'+(medals[i]||u.pos)+'</span>'+
+    html+='<div class="tabla-row '+(esYo?"me":"")+'"><span class="tabla-pos">'+(medals[i]||u.pos)+'</span>'+
       '<div class="tabla-avatar" style="background:'+avatarColor(u.nombre)+'">'+(u.nombre[0]||"?").toUpperCase()+'</div>'+
-      '<span class="tabla-nombre">'+u.nombre+'</span>'+
-      '<span class="tabla-pts">'+u.pts+'</span>'+
-      '<span class="tabla-pts-label">pts</span></div>';
+      '<span class="tabla-nombre">'+u.nombre+'</span><span class="tabla-pts">'+u.pts+'</span><span class="tabla-pts-label">pts</span></div>';
   });
   return html;
 }
@@ -474,18 +379,8 @@ function renderAdmin(){
   html+='</div>';
   if(state.loading){html+='<div class="loading"><div class="spinner">&#9917;</div><p>Cargando...</p></div>';}
   else if(state.tab==="solicitudes"){
-    if(!state.solicitudes||!state.solicitudes.length){
-      html+='<p style="color:#aaa;padding:20px">No hay solicitudes pendientes.</p>';
-    } else {
-      state.solicitudes.forEach(function(s){
-        html+='<div class="sol-card"><div>'+
-          '<strong>'+s.nombre+'</strong> <span style="color:#888">@'+s.usuario+'</span>'+
-          '<div><small style="color:#aaa">'+s.fecha+'</small></div>'+
-          '<span class="pw-badge">pw: '+s.password+'</span></div>'+
-          '<div><button class="btn-aprobar" data-usuario="'+s.usuario+'" data-nombre="'+s.nombre+'" data-action="aprobar">Aprobar</button>'+
-          '<button class="btn-rechazar" data-usuario="'+s.usuario+'" data-action="rechazar">Rechazar</button></div></div>';
-      });
-    }
+    if(!state.solicitudes||!state.solicitudes.length){html+='<p style="color:#aaa;padding:20px">No hay solicitudes pendientes.</p>';}
+    else{state.solicitudes.forEach(function(s){html+='<div class="sol-card"><div><strong>'+s.nombre+'</strong> <span style="color:#888">@'+s.usuario+'</span><div><small style="color:#aaa">'+s.fecha+'</small></div><span class="pw-badge">pw: '+s.password+'</span></div><div><button class="btn-aprobar" data-usuario="'+s.usuario+'" data-nombre="'+s.nombre+'" data-action="aprobar">Aprobar</button><button class="btn-rechazar" data-usuario="'+s.usuario+'" data-action="rechazar">Rechazar</button></div></div>';});}
   } else {
     html+='<button id="btn-actualizar-tabla" style="margin-bottom:16px;padding:10px 20px;background:#27ae60;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-size:14px">&#8635; Actualizar tabla ahora</button>';
     html+=renderTabla();
@@ -493,44 +388,21 @@ function renderAdmin(){
   return html+'</div>';
 }
 
-// ── EVENTS ─────────────────────────────────────────────────────
 function bindEvents(){
   var el;
-  el=document.getElementById("btn-login");
-  if(el)el.onclick=function(){state.loginForm.u=document.getElementById("inp-u").value;state.loginForm.p=document.getElementById("inp-p").value;doLogin();};
-  el=document.getElementById("inp-p");
-  if(el)el.onkeydown=function(e){if(e.key==="Enter"){state.loginForm.u=document.getElementById("inp-u").value;state.loginForm.p=this.value;doLogin();}};
-  el=document.getElementById("btn-solicitar");
-  if(el)el.onclick=function(){state.solForm.nombre=document.getElementById("inp-sn").value;state.solForm.password=document.getElementById("inp-sp").value;state.solForm.password2=document.getElementById("inp-sp2").value;doSolicitud();};
-  el=document.getElementById("btn-logout");
-  if(el)el.onclick=function(){clearInterval(window._cdInterval);state.view="login";state.me=null;state.fixture=[];state.pronosticos={};state.tabla=[];state.drafts={};state.penalesDraft={};state.solicitudes=[];state.campeonGuardado="";state.loginForm={u:"",p:""};render();};
-  el=document.getElementById("btn-guardar-campeon");
-  if(el)el.onclick=guardarCampeon;
+  el=document.getElementById("btn-login");if(el)el.onclick=function(){state.loginForm.u=document.getElementById("inp-u").value;state.loginForm.p=document.getElementById("inp-p").value;doLogin();};
+  el=document.getElementById("inp-p");if(el)el.onkeydown=function(e){if(e.key==="Enter"){state.loginForm.u=document.getElementById("inp-u").value;state.loginForm.p=this.value;doLogin();}};
+  el=document.getElementById("btn-solicitar");if(el)el.onclick=function(){state.solForm.nombre=document.getElementById("inp-sn").value;state.solForm.password=document.getElementById("inp-sp").value;state.solForm.password2=document.getElementById("inp-sp2").value;doSolicitud();};
+  el=document.getElementById("btn-logout");if(el)el.onclick=function(){clearInterval(window._cdInterval);state.view="login";state.me=null;state.fixture=[];state.pronosticos={};state.tabla=[];state.drafts={};state.penalesDraft={};state.solicitudes=[];state.campeonGuardado="";state.loginForm={u:"",p:""};render();};
+  el=document.getElementById("btn-guardar-campeon");if(el)el.onclick=guardarCampeon;
   document.querySelectorAll(".tab").forEach(function(b){b.onclick=function(){state.tab=this.dataset.tab;render();};});
-  document.querySelectorAll(".goles-inp").forEach(function(inp){
-    inp.oninput=function(){
-      var pid=this.dataset.pid,g=this.dataset.g;
-      if(!state.drafts[pid])state.drafts[pid]={};
-      state.drafts[pid][g]=this.value===""?"":parseInt(this.value);
-    };
-  });
-  document.querySelectorAll("[data-action='guardar']").forEach(function(b){
-    b.onclick=function(){var pid=this.dataset.pid;var p=state.fixture.find(function(x){return String(x.id)===String(pid);});if(p)guardarProno(p);};
-  });
-  document.querySelectorAll("[data-action='penales']").forEach(function(sel){
-    sel.onchange=function(){state.penalesDraft[this.dataset.pid]=this.value;};
-  });
+  document.querySelectorAll(".goles-inp").forEach(function(inp){inp.oninput=function(){var pid=this.dataset.pid,g=this.dataset.g;if(!state.drafts[pid])state.drafts[pid]={};state.drafts[pid][g]=this.value===""?"":parseInt(this.value);};});
+  document.querySelectorAll("[data-action='guardar']").forEach(function(b){b.onclick=function(){var pid=this.dataset.pid;var p=state.fixture.find(function(x){return String(x.id)===String(pid);});if(p)guardarProno(p);};});
+  document.querySelectorAll("[data-action='penales']").forEach(function(sel){sel.onchange=function(){state.penalesDraft[this.dataset.pid]=this.value;};});
   document.querySelectorAll("[data-action='aprobar']").forEach(function(b){b.onclick=function(){aprobarUsuario(this.dataset.usuario,this.dataset.nombre);};});
   document.querySelectorAll("[data-action='rechazar']").forEach(function(b){b.onclick=function(){rechazarUsuario(this.dataset.usuario);};});
   el=document.getElementById("btn-actualizar-tabla");
-  if(el)el.onclick=function(){
-    this.textContent="Actualizando...";this.disabled=true;
-    apiPost({action:"recalcularTabla"}).then(function(res){
-      if(res.ok){state.tabla=res.tabla;flash("Tabla actualizada!");}
-      else flash("Error: "+(res.error||""),"#e74c3c");
-      render();
-    });
-  };
+  if(el)el.onclick=function(){this.textContent="Actualizando...";this.disabled=true;apiPost({action:"recalcularTabla"}).then(function(res){if(res.ok){state.tabla=res.tabla;flash("Tabla actualizada!");}else flash("Error: "+(res.error||""),"#e74c3c");render();});};
 }
 
 render();

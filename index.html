@@ -1,1 +1,322 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prode Mundial 2026</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  body { background: #f4f4f4; min-height: 100vh; }
+  .container { max-width: 680px; margin: 0 auto; padding: 16px; }
+  .header { background: #c0392b; color: #fff; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px #0003; }
+  .header-left { display: flex; align-items: center; gap: 10px; }
+  .header h1 { font-size: 16px; font-weight: 800; }
+  .btn-logout { background: rgba(255,255,255,0.2); border: none; color: #fff; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 13px; }
+  .login-box { background: #fff; border-radius: 16px; padding: 32px 24px; margin: 40px auto; max-width: 400px; box-shadow: 0 4px 24px #0001; }
+  .login-box h2 { color: #c0392b; font-size: 22px; font-weight: 800; text-align: center; margin-bottom: 4px; }
+  .login-box .sub { color: #aaa; font-size: 13px; text-align: center; margin-bottom: 24px; }
+  .login-box .emoji { font-size: 48px; text-align: center; margin-bottom: 12px; }
+  .inp { width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #ddd; font-size: 15px; margin-bottom: 10px; }
+  .inp:focus { outline: none; border-color: #c0392b; }
+  .btn-primary { width: 100%; padding: 12px; background: #c0392b; color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; }
+  .btn-secondary { width: 100%; padding: 10px; background: #3498db; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 8px; }
+  .divider { border-top: 1px solid #eee; margin: 20px 0; }
+  .divider-label { text-align: center; color: #888; font-size: 13px; margin-bottom: 12px; font-weight: 600; }
+  .error { color: #e74c3c; font-size: 13px; margin: 6px 0; }
+  .success { color: #27ae60; font-size: 13px; margin: 6px 0; }
+  .tabs { display: flex; gap: 6px; margin: 16px 0; flex-wrap: wrap; }
+  .tab { padding: 7px 14px; border-radius: 8px; border: none; background: #e0e0e0; color: #444; cursor: pointer; font-size: 13px; font-weight: 500; }
+  .tab.active { background: #c0392b; color: #fff; font-weight: 700; }
+  .card { background: #fff; border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; border: 1px solid #eee; }
+  .card.guardado { border-left: 3px solid #2ecc71; }
+  .grupo-title { font-weight: 700; color: #c0392b; font-size: 14px; margin: 16px 0 8px; }
+  .partido-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .equipo { flex: 1; font-size: 13px; font-weight: 600; min-width: 90px; }
+  .equipo.right { text-align: right; }
+  .goles-inp { width: 46px; padding: 6px 4px; text-align: center; border-radius: 6px; border: 1px solid #ccc; font-size: 15px; }
+  .goles-inp:focus { outline: none; border-color: #3498db; }
+  .dash { color: #aaa; font-weight: 700; }
+  .btn-ok { padding: 6px 12px; background: #3498db; color: #fff; border: none; border-radius: 7px; cursor: pointer; font-weight: 600; font-size: 13px; }
+  .resultado-real { font-size: 12px; color: #888; }
+  .pts-badge { font-size: 12px; font-weight: 700; padding: 2px 6px; border-radius: 5px; }
+  .pts-badge.verde { background: #eafaf1; color: #27ae60; }
+  .pts-badge.rojo { background: #fdf0f0; color: #e74c3c; }
+  .fecha-info { font-size: 11px; color: #aaa; width: 100%; margin-top: 2px; }
+  .tabla-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 10px; background: #fafafa; border: 1px solid #eee; margin-bottom: 8px; }
+  .tabla-row.me { background: #eaf4ff; border: 2px solid #3498db; }
+  .tabla-pos { font-size: 18px; min-width: 30px; text-align: center; }
+  .tabla-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 13px; flex-shrink: 0; }
+  .tabla-nombre { flex: 1; font-weight: 600; font-size: 14px; }
+  .tabla-pts { font-weight: 800; font-size: 22px; color: #c0392b; }
+  .tabla-pts-label { color: #aaa; font-size: 13px; }
+  .flash { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #27ae60; color: #fff; padding: 10px 20px; border-radius: 10px; font-weight: 600; font-size: 14px; z-index: 999; box-shadow: 0 4px 12px #0003; }
+  .loading { text-align: center; padding: 40px; color: #aaa; }
+  .spinner { font-size: 36px; animation: spin 1s linear infinite; display: inline-block; }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  .info-box { background: #f0f7ff; border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; font-size: 13px; color: #3498db; }
+  .puntos-ref { background: #f9f9f9; border-radius: 8px; padding: 10px 14px; margin-top: 14px; font-size: 12px; color: #888; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+var API_URL = "https://script.google.com/macros/s/AKfycbzOvBbw0swCb9oOaD7bbdrtNW-aMQw8cvVJqHlMdo8i13U_icwP1VQORc7NuanmO5w/exec";
 
+var state = {
+  view: "login", me: null, fixture: [], pronosticos: {}, tabla: [],
+  tab: "grupos", loading: false, flash: null,
+  loginForm: { u: "", p: "" }, solForm: { u: "", nombre: "" },
+  loginErr: "", solMsg: "", drafts: {}
+};
+
+function apiGet(params) {
+  var qs = Object.keys(params).map(function(k) { return k + "=" + encodeURIComponent(params[k]); }).join("&");
+  return fetch(API_URL + "?" + qs).then(function(r) { return r.json(); });
+}
+
+function apiPost(data) {
+  return fetch(API_URL, { method: "POST", body: JSON.stringify(data) }).then(function(r) { return r.json(); });
+}
+
+function flash(msg, color) {
+  state.flash = { msg: msg, color: color || "#27ae60" };
+  render();
+  setTimeout(function() { state.flash = null; render(); }, 2500);
+}
+
+function doLogin() {
+  state.loginErr = "";
+  apiGet({ action: "login", usuario: state.loginForm.u, password: state.loginForm.p })
+    .then(function(res) {
+      if (res.ok) {
+        state.me = res;
+        state.me.username = state.loginForm.u;
+        state.view = res.isAdmin ? "admin" : "usuario";
+        state.tab = res.isAdmin ? "solicitudes" : "grupos";
+        loadData();
+      } else {
+        state.loginErr = res.error || "Error al ingresar";
+        render();
+      }
+    }).catch(function() { state.loginErr = "Error de conexion"; render(); });
+}
+
+function doSolicitud() {
+  if (!state.solForm.u || !state.solForm.nombre) { state.solMsg = "Completa todos los campos."; render(); return; }
+  apiPost({ action: "solicitarAcceso", usuario: state.solForm.u.toLowerCase().replace(/\s/g,""), nombre: state.solForm.nombre })
+    .then(function(res) {
+      state.solMsg = res.ok ? "Solicitud enviada. El admin te aprueba pronto. Tu contrasena sera: " + res.password : (res.error || "Error");
+      render();
+    });
+}
+
+function loadData() {
+  state.loading = true; render();
+  var promises = [apiGet({ action: "getFixture" }), apiGet({ action: "getTabla" })];
+  if (state.me && !state.me.isAdmin) promises.push(apiGet({ action: "getPronosticos", usuario: state.me.username }));
+  Promise.all(promises).then(function(results) {
+    if (results[0].ok) state.fixture = results[0].partidos;
+    if (results[1].ok) state.tabla = results[1].tabla;
+    if (results[2] && results[2].ok) state.pronosticos = results[2].pronosticos;
+    state.loading = false; render();
+  }).catch(function() { state.loading = false; render(); });
+}
+
+function guardarProno(partido) {
+  var d = state.drafts[partido.id] || {};
+  var saved = state.pronosticos[partido.id] || {};
+  var g1 = d.g1 !== undefined ? d.g1 : saved.g1;
+  var g2 = d.g2 !== undefined ? d.g2 : saved.g2;
+  if (g1 === "" || g1 === undefined || g2 === "" || g2 === undefined) { flash("Completa ambos goles", "#e74c3c"); return; }
+  apiPost({ action: "guardarPronostico", usuario: state.me.username, partidoId: partido.id, g1: Number(g1), g2: Number(g2) })
+    .then(function(res) {
+      if (res.ok) {
+        state.pronosticos[partido.id] = { g1: Number(g1), g2: Number(g2) };
+        delete state.drafts[partido.id];
+        flash("Guardado"); render();
+      }
+    });
+}
+
+var PUNTOS = { Grupos:{exacto:3,resultado:1},"16avos":{exacto:4,resultado:2},Octavos:{exacto:5,resultado:2},Cuartos:{exacto:7,resultado:3},Semis:{exacto:9,resultado:4},Tercero:{exacto:9,resultado:4},Final:{exacto:15,resultado:6} };
+
+function calcPts(prono, partido) {
+  if (!prono || partido.golesLocal === "" || partido.golesVisit === "") return null;
+  var p = PUNTOS[partido.fase] || PUNTOS.Grupos;
+  if (Number(prono.g1) === Number(partido.golesLocal) && Number(prono.g2) === Number(partido.golesVisit)) return p.exacto;
+  var rP = Math.sign(prono.g1 - prono.g2), rR = Math.sign(partido.golesLocal - partido.golesVisit);
+  return rP === rR ? p.resultado : 0;
+}
+
+function getGrupos() {
+  var g = [];
+  state.fixture.forEach(function(p) { if (p.fase === "Grupos" && g.indexOf(p.grupo) < 0) g.push(p.grupo); });
+  return g.sort();
+}
+
+function getFases() {
+  var orden = ["16avos","Octavos","Cuartos","Semis","Tercero","Final"], fases = [];
+  orden.forEach(function(f) { if (state.fixture.some(function(p) { return p.fase === f; })) fases.push(f); });
+  return fases;
+}
+
+function avatarColor(n) {
+  var c = ["#e74c3c","#3498db","#2ecc71","#f39c12","#9b59b6","#1abc9c","#e67e22","#16a085"];
+  return c[(n||"").charCodeAt(0) % c.length];
+}
+
+function render() {
+  var html = "";
+  if (state.flash) html += '<div class="flash" style="background:' + state.flash.color + '">' + state.flash.msg + '</div>';
+  if (state.view === "login") html += renderLogin();
+  else if (state.view === "usuario") html += renderHeader() + renderUsuario();
+  else if (state.view === "admin") html += renderHeader() + renderAdmin();
+  document.getElementById("app").innerHTML = html;
+  bindEvents();
+}
+
+function renderLogin() {
+  return '<div class="container"><div class="login-box">' +
+    '<div class="emoji">&#9917;</div>' +
+    '<h2>Prode Mundial 2026</h2><p class="sub">Solo usuarios habilitados</p>' +
+    '<input class="inp" id="inp-u" type="text" placeholder="Usuario" value="' + state.loginForm.u + '">' +
+    '<input class="inp" id="inp-p" type="password" placeholder="Contrasena" value="' + state.loginForm.p + '">' +
+    (state.loginErr ? '<p class="error">' + state.loginErr + '</p>' : '') +
+    '<button class="btn-primary" id="btn-login">Entrar</button>' +
+    '<div class="divider"></div><p class="divider-label">No tenes acceso? Pedile al admin</p>' +
+    '<input class="inp" id="inp-su" type="text" placeholder="Nombre de usuario (sin espacios)" value="' + state.solForm.u + '">' +
+    '<input class="inp" id="inp-sn" type="text" placeholder="Tu nombre o apodo" value="' + state.solForm.nombre + '">' +
+    '<button class="btn-secondary" id="btn-solicitar">Solicitar acceso</button>' +
+    (state.solMsg ? '<p class="' + (state.solMsg.includes("enviada") ? "success" : "error") + '">' + state.solMsg + '</p>' : '') +
+    '</div></div>';
+}
+
+function renderHeader() {
+  var nombre = state.me ? state.me.displayName : "";
+  var entry = state.tabla.find(function(t) { return t.nombre === nombre; });
+  var pos = (!state.me.isAdmin && entry) ? " #" + (state.tabla.indexOf(entry)+1) + " " + entry.pts + "pts" : "";
+  return '<div class="header"><div class="header-left">' +
+    '<div style="width:34px;height:34px;border-radius:50%;background:' + avatarColor(nombre) + ';display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px">' + (nombre[0]||"?").toUpperCase() + '</div>' +
+    '<div><div style="font-weight:700;font-size:15px">' + nombre + '</div><div style="font-size:11px;opacity:0.8">' + (state.me.isAdmin ? "Admin" : "Jugador" + pos) + '</div></div>' +
+    '</div><button class="btn-logout" id="btn-logout">Salir</button></div>';
+}
+
+function renderUsuario() {
+  var grupos = getGrupos(), fases = getFases();
+  var tabs = ["grupos"].concat(fases).concat(["tabla"]);
+  var html = '<div class="container"><div class="tabs">';
+  tabs.forEach(function(t) {
+    html += '<button class="tab ' + (state.tab===t?"active":"") + '" data-tab="' + t + '">' + (t==="tabla"?"Tabla":t) + '</button>';
+  });
+  html += '</div>';
+  if (state.loading) { html += '<div class="loading"><div class="spinner">&#9917;</div><p>Cargando...</p></div>'; }
+  else if (state.tab === "tabla") { html += renderTabla(); }
+  else if (state.tab === "grupos") {
+    html += '<div class="info-box">Verde = guardado. Exacto: 3pts. Solo resultado: 1pt</div>';
+    grupos.forEach(function(grp) {
+      html += '<div class="grupo-title">Grupo ' + grp + '</div>';
+      state.fixture.filter(function(p) { return p.grupo === grp && p.fase === "Grupos"; }).forEach(function(p) { html += renderPartido(p); });
+    });
+  } else {
+    var ptsInfo = PUNTOS[state.tab] || {};
+    html += '<div class="info-box">Exacto: ' + ptsInfo.exacto + 'pts. Solo resultado: ' + ptsInfo.resultado + 'pts</div>';
+    state.fixture.filter(function(p) { return p.fase === state.tab; }).forEach(function(p) { html += renderPartido(p); });
+  }
+  html += '<div class="puntos-ref">Grupos: 3/1 - 16avos: 4/2 - Octavos: 5/2 - Cuartos: 7/3 - Semis: 9/4 - Final: 15/6</div></div>';
+  return html;
+}
+
+function renderPartido(p) {
+  var saved = state.pronosticos[p.id], draft = state.drafts[p.id] || {};
+  var g1 = draft.g1 !== undefined ? draft.g1 : (saved ? saved.g1 : "");
+  var g2 = draft.g2 !== undefined ? draft.g2 : (saved ? saved.g2 : "");
+  var pts = calcPts(saved, p);
+  var tieneRes = p.golesLocal !== "" && p.golesVisit !== "";
+  return '<div class="card ' + (saved?"guardado":"") + '">' +
+    '<div class="partido-row">' +
+    '<span class="equipo right">' + p.local + '</span>' +
+    '<input class="goles-inp" style="background:' + (saved?"#eafaf1":"#fff") + '" type="number" min="0" max="20" value="' + g1 + '" data-pid="' + p.id + '" data-g="g1">' +
+    '<span class="dash">-</span>' +
+    '<input class="goles-inp" style="background:' + (saved?"#eafaf1":"#fff") + '" type="number" min="0" max="20" value="' + g2 + '" data-pid="' + p.id + '" data-g="g2">' +
+    '<span class="equipo">' + p.visitante + '</span>' +
+    '<button class="btn-ok" data-pid="' + p.id + '" data-action="guardar">OK</button>' +
+    (tieneRes ? '<span class="resultado-real">' + p.golesLocal + '-' + p.golesVisit + '</span>' : '') +
+    (pts !== null ? '<span class="pts-badge ' + (pts>0?"verde":"rojo") + '">' + (pts>0?"+"+pts:0) + 'pts</span>' : '') +
+    '</div><div class="fecha-info">' + p.fecha + ' ' + p.hora + 'hs - ' + p.estadio + '</div></div>';
+}
+
+function renderTabla() {
+  if (!state.tabla.length) return '<p style="color:#aaa;padding:20px">Aun no hay puntos cargados.</p>';
+  var medals = ["1ro","2do","3ro"];
+  var html = '<div style="font-weight:700;font-size:16px;color:#c0392b;margin-bottom:12px">Tabla de posiciones</div>';
+  state.tabla.forEach(function(u, i) {
+    var esYo = state.me && u.nombre === state.me.displayName;
+    html += '<div class="tabla-row ' + (esYo?"me":"") + '">' +
+      '<span class="tabla-pos">' + (medals[i]||u.pos) + '</span>' +
+      '<div class="tabla-avatar" style="background:' + avatarColor(u.nombre) + '">' + (u.nombre[0]||"?").toUpperCase() + '</div>' +
+      '<span class="tabla-nombre">' + u.nombre + '</span>' +
+      '<span class="tabla-pts">' + u.pts + '</span>' +
+      '<span class="tabla-pts-label">pts</span></div>';
+  });
+  return html;
+}
+
+function renderAdmin() {
+  var html = '<div class="container"><div class="tabs">';
+  ["solicitudes","tabla"].forEach(function(t) {
+    html += '<button class="tab ' + (state.tab===t?"active":"") + '" data-tab="' + t + '">' + (t==="solicitudes"?"Solicitudes":"Tabla") + '</button>';
+  });
+  html += '</div>';
+  if (state.tab === "solicitudes") {
+    html += '<div class="info-box">Para aprobar usuarios: abre Apps Script y ejecuta <b>aprobarUsuario("nombreusuario")</b></div>';
+  } else {
+    html += renderTabla();
+  }
+  return html + '</div>';
+}
+
+function bindEvents() {
+  var btnLogin = document.getElementById("btn-login");
+  if (btnLogin) btnLogin.onclick = function() {
+    state.loginForm.u = document.getElementById("inp-u").value;
+    state.loginForm.p = document.getElementById("inp-p").value;
+    doLogin();
+  };
+  var inpP = document.getElementById("inp-p");
+  if (inpP) inpP.onkeydown = function(e) {
+    if (e.key === "Enter") { state.loginForm.u = document.getElementById("inp-u").value; state.loginForm.p = inpP.value; doLogin(); }
+  };
+  var btnSol = document.getElementById("btn-solicitar");
+  if (btnSol) btnSol.onclick = function() {
+    state.solForm.u = document.getElementById("inp-su").value;
+    state.solForm.nombre = document.getElementById("inp-sn").value;
+    doSolicitud();
+  };
+  var btnOut = document.getElementById("btn-logout");
+  if (btnOut) btnOut.onclick = function() {
+    state.view = "login"; state.me = null; state.fixture = []; state.pronosticos = {}; state.tabla = []; state.drafts = {};
+    state.loginForm = {u:"",p:""}; render();
+  };
+  document.querySelectorAll(".tab").forEach(function(btn) {
+    btn.onclick = function() { state.tab = this.dataset.tab; render(); };
+  });
+  document.querySelectorAll(".goles-inp").forEach(function(inp) {
+    inp.oninput = function() {
+      var pid = this.dataset.pid, g = this.dataset.g;
+      if (!state.drafts[pid]) state.drafts[pid] = {};
+      state.drafts[pid][g] = this.value === "" ? "" : parseInt(this.value);
+    };
+  });
+  document.querySelectorAll("[data-action='guardar']").forEach(function(btn) {
+    btn.onclick = function() {
+      var pid = this.dataset.pid;
+      var partido = state.fixture.find(function(p) { return String(p.id) === String(pid); });
+      if (partido) guardarProno(partido);
+    };
+  });
+}
+
+render();
+</script>
+</body>
+</html>

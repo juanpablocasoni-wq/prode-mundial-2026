@@ -282,7 +282,7 @@ function renderUsuario() {
     partidosGrupos.forEach(function(p) {
       if (p.fecha !== fechaActual) {
         fechaActual = p.fecha;
-        html += '<div class="grupo-title">&#128197; ' + p.fecha + ' — Grupo ' + p.grupo + '</div>';
+        html += '<div class="grupo-title">&#128197; ' + p.fecha + '</div>';
       }
       html += renderPartido(p);
     });

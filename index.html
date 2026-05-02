@@ -108,11 +108,20 @@ function doLogin() {
 }
 
 function doSolicitud() {
-  if (!state.solForm.u || !state.solForm.nombre) { state.solMsg = "Completa todos los campos."; render(); return; }
-  apiPost({ action: "solicitarAcceso", usuario: state.solForm.u.toLowerCase().replace(/\s/g,""), nombre: state.solForm.nombre })
+  var nombre = document.getElementById("inp-sn").value.trim();
+  var pw = document.getElementById("inp-sp").value;
+  var pw2 = document.getElementById("inp-sp2").value;
+  if (!nombre) { state.solMsg = "Ingresa tu nombre o apodo."; render(); return; }
+  if (!pw || pw.length < 4) { state.solMsg = "La contrasena debe tener al menos 4 caracteres."; render(); return; }
+  if (pw !== pw2) { state.solMsg = "Las contrasenas no coinciden."; render(); return; }
+  state.solForm.nombre = nombre;
+  state.solForm.password = pw;
+  // Generar usuario a partir del nombre
+  var usuario = nombre.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/\s+/g,"").replace(/[^a-z0-9]/g,"");
+  apiPost({ action: "solicitarAcceso", usuario: usuario, nombre: nombre, password: pw })
     .then(function(res) {
       state.solMsg = res.ok
-        ? "Solicitud enviada! El admin te aprueba pronto. Tu contrasena sera: " + res.password
+        ? "Solicitud enviada! El admin te aprueba pronto. Tu usuario de acceso sera: " + usuario
         : (res.error || "Error al enviar");
       render();
     }).catch(function() { state.solMsg = "Error de conexion."; render(); });
@@ -263,8 +272,9 @@ function renderLogin() {
     (state.loginErr ? '<p class="error">' + state.loginErr + '</p>' : '') +
     '<button class="btn-primary" id="btn-login">Entrar</button>' +
     '<div class="divider"></div><p class="divider-label">No tenes acceso? Pedile al admin</p>' +
-    '<input class="inp" id="inp-su" type="text" placeholder="Nombre de usuario (sin espacios)" value="' + state.solForm.u + '">' +
-    '<input class="inp" id="inp-sn" type="text" placeholder="Tu nombre o apodo" value="' + state.solForm.nombre + '">' +
+    '<input class="inp" id="inp-sn" type="text" placeholder="Tu nombre o apodo (ej: Juan Pablo)" value="' + state.solForm.nombre + '">' +
+    '<input class="inp" id="inp-sp" type="password" placeholder="Elegí una contraseña" value="' + (state.solForm.password||"") + '">' +
+    '<input class="inp" id="inp-sp2" type="password" placeholder="Repetí la contraseña" value="' + (state.solForm.password2||"") + '">' +
     '<button class="btn-secondary" id="btn-solicitar">Solicitar acceso</button>' +
     (state.solMsg ? '<p class="' + (state.solMsg.includes("enviada") ? "success" : "error") + '">' + state.solMsg + '</p>' : '') +
     '</div></div>';
@@ -406,11 +416,7 @@ function bindEvents() {
     if (e.key === "Enter") { state.loginForm.u = document.getElementById("inp-u").value; state.loginForm.p = inpP.value; doLogin(); }
   };
   var btnSol = document.getElementById("btn-solicitar");
-  if (btnSol) btnSol.onclick = function() {
-    state.solForm.u = document.getElementById("inp-su").value;
-    state.solForm.nombre = document.getElementById("inp-sn").value;
-    doSolicitud();
-  };
+  if (btnSol) btnSol.onclick = function() { doSolicitud(); };
   var btnOut = document.getElementById("btn-logout");
   if (btnOut) btnOut.onclick = function() {
     state.view = "login"; state.me = null; state.fixture = []; state.pronosticos = {};

@@ -251,9 +251,19 @@ function renderUsuario() {
     html += renderTabla();
   } else if (state.tab === "grupos") {
     html += '<div class="info-box">Verde = guardado. Exacto: 3pts. Solo resultado: 1pt</div>';
-    grupos.forEach(function(grp) {
-      html += '<div class="grupo-title">Grupo ' + grp + '</div>';
-      state.fixture.filter(function(p) { return p.grupo === grp && p.fase === "Grupos"; }).forEach(function(p) { html += renderPartido(p); });
+    var partidosGrupos = state.fixture.filter(function(p) { return p.fase === "Grupos"; });
+    partidosGrupos.sort(function(a,b) {
+      var da = a.fecha.split("/").reverse().join("") + a.hora.replace(":","");
+      var db = b.fecha.split("/").reverse().join("") + b.hora.replace(":","");
+      return da > db ? 1 : da < db ? -1 : 0;
+    });
+    var fechaActual = "";
+    partidosGrupos.forEach(function(p) {
+      if (p.fecha !== fechaActual) {
+        fechaActual = p.fecha;
+        html += '<div class="grupo-title">&#128197; ' + p.fecha + '</div>';
+      }
+      html += renderPartido(p);
     });
   } else {
     var ptsInfo = PUNTOS[state.tab] || {};

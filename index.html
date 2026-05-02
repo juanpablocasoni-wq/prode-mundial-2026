@@ -270,14 +270,16 @@ function renderPartido(p) {
   var g2 = draft.g2 !== undefined ? draft.g2 : (saved ? saved.g2 : "");
   var pts = calcPts(saved, p);
   var tieneRes = p.golesLocal !== "" && p.golesVisit !== "";
+  var bloqueado = saved ? "readonly" : "";
+  var bgColor = saved ? "#eafaf1" : "#fff";
   return '<div class="card ' + (saved?"guardado":"") + '">' +
     '<div class="partido-row">' +
     '<span class="equipo right">' + p.local + '</span>' +
-    '<input class="goles-inp" style="background:' + (saved?"#eafaf1":"#fff") + '" type="number" min="0" max="20" value="' + g1 + '" data-pid="' + p.id + '" data-g="g1">' +
+    '<input class="goles-inp" style="background:' + bgColor + ';cursor:' + (saved?"not-allowed":"text") + '" type="number" min="0" max="20" value="' + g1 + '" data-pid="' + p.id + '" data-g="g1" ' + bloqueado + '>' +
     '<span class="dash">-</span>' +
-    '<input class="goles-inp" style="background:' + (saved?"#eafaf1":"#fff") + '" type="number" min="0" max="20" value="' + g2 + '" data-pid="' + p.id + '" data-g="g2">' +
+    '<input class="goles-inp" style="background:' + bgColor + ';cursor:' + (saved?"not-allowed":"text") + '" type="number" min="0" max="20" value="' + g2 + '" data-pid="' + p.id + '" data-g="g2" ' + bloqueado + '>' +
     '<span class="equipo">' + p.visitante + '</span>' +
-    '<button class="btn-ok" data-pid="' + p.id + '" data-action="guardar">OK</button>' +
+    (saved ? '<span style="font-size:12px;color:#27ae60;font-weight:700">&#10003; Guardado</span>' : '<button class="btn-ok" data-pid="' + p.id + '" data-action="guardar">OK</button>') +
     (tieneRes ? '<span class="resultado-real">' + p.golesLocal + '-' + p.golesVisit + '</span>' : '') +
     (pts !== null ? '<span class="pts-badge ' + (pts>0?"verde":"rojo") + '">' + (pts>0?"+"+pts:0) + 'pts</span>' : '') +
     '</div><div class="fecha-info">&#128197; ' + p.fecha + ' ' + p.hora + 'hs - ' + p.estadio + '</div></div>';
@@ -327,6 +329,7 @@ function renderAdmin() {
       });
     }
   } else {
+    html += '<button id="btn-actualizar-tabla" style="margin-bottom:16px;padding:10px 20px;background:#27ae60;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-size:14px">&#8635; Actualizar tabla ahora</button>';
     html += renderTabla();
   }
   return html + '</div>';
@@ -378,6 +381,20 @@ function bindEvents() {
   document.querySelectorAll("[data-action='rechazar']").forEach(function(btn) {
     btn.onclick = function() { rechazarUsuario(this.dataset.usuario); };
   });
+  var btnActTabla = document.getElementById("btn-actualizar-tabla");
+  if (btnActTabla) btnActTabla.onclick = function() {
+    btnActTabla.textContent = "Actualizando...";
+    btnActTabla.disabled = true;
+    apiPost({ action: "recalcularTabla" }).then(function(res) {
+      if (res.ok) {
+        state.tabla = res.tabla;
+        flash("Tabla actualizada!");
+      } else {
+        flash("Error: " + (res.error||""), "#e74c3c");
+      }
+      render();
+    });
+  };
 }
 
 render();

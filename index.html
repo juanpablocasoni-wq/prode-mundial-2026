@@ -253,9 +253,10 @@ function renderUsuario() {
     html += '<div class="info-box">Verde = guardado. Exacto: 3pts. Solo resultado: 1pt</div>';
     var partidosGrupos = state.fixture.filter(function(p) { return p.fase === "Grupos"; });
     partidosGrupos.sort(function(a,b) {
-      var da = a.fecha.split("/").reverse().join("") + a.hora.replace(":","");
-      var db = b.fecha.split("/").reverse().join("") + b.hora.replace(":","");
-      return da > db ? 1 : da < db ? -1 : 0;
+      var pA = a.fecha.split("/"), pB = b.fecha.split("/");
+      var keyA = pA[1] + pA[0] + a.hora.replace(":","");
+      var keyB = pB[1] + pB[0] + b.hora.replace(":","");
+      return keyA < keyB ? -1 : keyA > keyB ? 1 : 0;
     });
     var fechaActual = "";
     partidosGrupos.forEach(function(p) {

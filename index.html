@@ -119,19 +119,42 @@ function doSolicitud() {
 }
 
 function loadData() {
-  state.loading = true; render();
-  var promises = [apiGet({ action: "getFixture" }), apiGet({ action: "getTabla" })];
+  state.loading = true;
+
+  // Usar fixture cacheado si existe (evita llamada al servidor)
+  var cachedFixture = sessionStorage.getItem("prode_fixture");
+  if (cachedFixture) {
+    state.fixture = JSON.parse(cachedFixture);
+    state.loading = false;
+    render();
+    // Cargar el resto en paralelo sin bloquear
+    cargarResto();
+  } else {
+    render();
+    apiGet({ action: "getFixture" }).then(function(res) {
+      if (res.ok) {
+        state.fixture = res.partidos;
+        sessionStorage.setItem("prode_fixture", JSON.stringify(res.partidos));
+      }
+      state.loading = false;
+      render();
+      cargarResto();
+    }).catch(function() { state.loading = false; render(); });
+  }
+}
+
+function cargarResto() {
+  var promises = [apiGet({ action: "getTabla" })];
   if (state.me && !state.me.isAdmin) promises.push(apiGet({ action: "getPronosticos", usuario: state.me.username }));
   if (state.me && state.me.isAdmin) promises.push(apiGet({ action: "getSolicitudes" }));
   Promise.all(promises).then(function(results) {
-    if (results[0] && results[0].ok) state.fixture = results[0].partidos;
-    if (results[1] && results[1].ok) state.tabla = results[1].tabla;
-    if (results[2] && results[2].ok) {
-      if (state.me.isAdmin) state.solicitudes = results[2].solicitudes;
-      else state.pronosticos = results[2].pronosticos;
+    if (results[0] && results[0].ok) state.tabla = results[0].tabla;
+    if (results[1] && results[1].ok) {
+      if (state.me.isAdmin) state.solicitudes = results[1].solicitudes;
+      else state.pronosticos = results[1].pronosticos;
     }
-    state.loading = false; render();
-  }).catch(function() { state.loading = false; render(); });
+    render();
+  }).catch(function() {});
 }
 
 function guardarProno(partido) {
@@ -140,14 +163,13 @@ function guardarProno(partido) {
   var g1 = d.g1 !== undefined ? d.g1 : saved.g1;
   var g2 = d.g2 !== undefined ? d.g2 : saved.g2;
   if (g1 === "" || g1 === undefined || g2 === "" || g2 === undefined) { flash("Completa ambos goles", "#e74c3c"); return; }
+  // Actualización optimista — mostrar guardado inmediatamente
+  state.pronosticos[partido.id] = { g1: Number(g1), g2: Number(g2) };
+  delete state.drafts[partido.id];
+  flash("Guardado"); render();
+  // Enviar al servidor en segundo plano
   apiPost({ action: "guardarPronostico", usuario: state.me.username, partidoId: partido.id, g1: Number(g1), g2: Number(g2) })
-    .then(function(res) {
-      if (res.ok) {
-        state.pronosticos[partido.id] = { g1: Number(g1), g2: Number(g2) };
-        delete state.drafts[partido.id];
-        flash("Guardado"); render();
-      }
-    });
+    .catch(function() { flash("Error al guardar, intenta de nuevo", "#e74c3c"); });
 }
 
 function aprobarUsuario(usuario, nombre) {

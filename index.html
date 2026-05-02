@@ -89,7 +89,7 @@ var EQUIPOS = ["Alemania","Arabia Saudi","Argelia","Argentina","Australia","Aust
 var PRIMER_PARTIDO_UTC = new Date(Date.UTC(2026,5,11,20,0,0));
 
 var state = {
-  view:"login",me:null,fixture:[],pronosticos:{},tabla:[],solicitudes:[],
+  view:"login",me:null,fixture:[],pronosticos:{},tabla:[],solicitudes:[],usuarios:[],
   tab:"grupos",loading:false,flash:null,
   loginForm:{u:"",p:""},solForm:{nombre:"",password:"",password2:""},
   loginErr:"",solMsg:"",drafts:{},penalesDraft:{},
@@ -132,15 +132,32 @@ function loadData(){
 function cargarResto(){
   var promises=[apiGet({action:"getTabla"})];
   if(state.me&&!state.me.isAdmin)promises.push(apiGet({action:"getPronosticos",usuario:state.me.username}));
-  if(state.me&&state.me.isAdmin)promises.push(apiGet({action:"getSolicitudes"}));
+  if(state.me&&state.me.isAdmin){
+    promises.push(apiGet({action:"getSolicitudes"}));
+    promises.push(apiGet({action:"getUsuarios"}));
+  }
   Promise.all(promises).then(function(r){
     if(r[0]&&r[0].ok)state.tabla=r[0].tabla;
     if(r[1]&&r[1].ok){
       if(state.me.isAdmin)state.solicitudes=r[1].solicitudes;
       else{state.pronosticos=r[1].pronosticos;state.campeonGuardado=r[1].campeon||"";state.campeonDraft=r[1].campeon||"";}
     }
+    if(r[2]&&r[2].ok&&state.me.isAdmin)state.usuarios=r[2].usuarios;
     render();
   }).catch(function(){});
+}
+
+function resetPassword(usuario,nombre){
+  if(!confirm("Resetear contrasena de "+nombre+"?"))return;
+  apiPost({action:"resetPassword",usuario:usuario}).then(function(res){
+    if(res.ok){
+      flash("Nueva contrasena de "+nombre+": "+res.password);
+      // actualizar en estado local
+      var u=state.usuarios.find(function(x){return x.usuario===usuario;});
+      if(u)u.password=res.password;
+      render();
+    } else flash("Error: "+(res.error||""),"#e74c3c");
+  });
 }
 
 function getGanador(g1,g2,p){if(g1>g2)return"local";if(g1<g2)return"visitante";return p||null;}
@@ -378,8 +395,8 @@ function renderTabla(){
 
 function renderAdmin(){
   var html='<div class="container"><div class="tabs">';
-  ["solicitudes","tabla"].forEach(function(t){
-    var label=t==="solicitudes"?"Solicitudes ("+(state.solicitudes?state.solicitudes.length:0)+")":"Tabla";
+  ["solicitudes","usuarios","tabla"].forEach(function(t){
+    var label=t==="solicitudes"?"Solicitudes ("+(state.solicitudes?state.solicitudes.length:0)+")":t==="usuarios"?"Usuarios ("+(state.usuarios?state.usuarios.length:0)+")":"Tabla";
     html+='<button class="tab '+(state.tab===t?"active":"")+'" data-tab="'+t+'">'+label+'</button>';
   });
   html+='</div>';
@@ -387,6 +404,9 @@ function renderAdmin(){
   else if(state.tab==="solicitudes"){
     if(!state.solicitudes||!state.solicitudes.length){html+='<p style="color:#aaa;padding:20px">No hay solicitudes pendientes.</p>';}
     else{state.solicitudes.forEach(function(s){html+='<div class="sol-card"><div><strong>'+s.nombre+'</strong> <span style="color:#888">@'+s.usuario+'</span><div><small style="color:#aaa">'+s.fecha+'</small></div><span class="pw-badge">pw: '+s.password+'</span></div><div><button class="btn-aprobar" data-usuario="'+s.usuario+'" data-nombre="'+s.nombre+'" data-action="aprobar">Aprobar</button><button class="btn-rechazar" data-usuario="'+s.usuario+'" data-action="rechazar">Rechazar</button></div></div>';});}
+  } else if(state.tab==="usuarios"){
+    if(!state.usuarios||!state.usuarios.length){html+='<p style="color:#aaa;padding:20px">No hay usuarios aprobados.</p>';}
+    else{state.usuarios.forEach(function(u){html+='<div class="sol-card" style="background:#fff;border-color:#eee"><div><strong>'+u.nombre+'</strong> <span style="color:#888">@'+u.usuario+'</span><span class="pw-badge">pw: '+u.password+'</span></div><div><button class="btn-rechazar" data-usuario="'+u.usuario+'" data-nombre="'+u.nombre+'" data-action="resetpw" style="background:#f39c12">Resetear contrasena</button></div></div>';});}
   } else {
     html+='<button id="btn-actualizar-tabla" style="margin-bottom:16px;padding:10px 20px;background:#27ae60;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-size:14px">&#8635; Actualizar tabla ahora</button>';
     html+=renderTabla();
@@ -407,6 +427,7 @@ function bindEvents(){
   document.querySelectorAll("[data-action='penales']").forEach(function(sel){sel.onchange=function(){state.penalesDraft[this.dataset.pid]=this.value;};});
   document.querySelectorAll("[data-action='aprobar']").forEach(function(b){b.onclick=function(){aprobarUsuario(this.dataset.usuario,this.dataset.nombre);};});
   document.querySelectorAll("[data-action='rechazar']").forEach(function(b){b.onclick=function(){rechazarUsuario(this.dataset.usuario);};});
+  document.querySelectorAll("[data-action='resetpw']").forEach(function(b){b.onclick=function(){resetPassword(this.dataset.usuario,this.dataset.nombre);};});
   el=document.getElementById("btn-actualizar-tabla");
   if(el)el.onclick=function(){this.textContent="Actualizando...";this.disabled=true;apiPost({action:"recalcularTabla"}).then(function(res){if(res.ok){state.tabla=res.tabla;flash("Tabla actualizada!");}else flash("Error: "+(res.error||""),"#e74c3c");render();});};
 }

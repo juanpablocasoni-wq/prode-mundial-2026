@@ -159,7 +159,13 @@ function calcPts(prono,p){
 }
 
 function partidoEmpezado(p){
-  try{var parts=p.fecha.split("/");var utc=new Date(Date.UTC(2026,parseInt(parts[1])-1,parseInt(parts[0]),parseInt(p.hora.split(":")[0])+5,parseInt(p.hora.split(":")[1])));return new Date()>utc;}catch(e){return false;}
+  try{
+    var parts=p.fecha.split("/");
+    var dia=parseInt(parts[0]),mes=parseInt(parts[1])-1;
+    // Se bloquea a las 00:00 del dia del partido (hora Argentina = UTC-3)
+    var medianoche=new Date(Date.UTC(2026,mes,dia,3,0,0));
+    return new Date()>medianoche;
+  }catch(e){return false;}
 }
 function sortKey(p){try{var parts=p.fecha.split("/");return"2026"+parts[1].padStart(2,"0")+parts[0].padStart(2,"0")+p.hora.replace(":","").padStart(4,"0");}catch(e){return"";}}
 function getGrupos(){var g=[];state.fixture.forEach(function(p){if(p.fase==="Grupos"&&g.indexOf(p.grupo)<0)g.push(p.grupo);});return g.sort();}
